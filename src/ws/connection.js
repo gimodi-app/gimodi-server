@@ -8,7 +8,7 @@ import supportedVersions from '../supportedVersions.js';
 const require = createRequire(import.meta.url);
 const { version: serverVersion } = require('../../package.json');
 import state from '../state.js';
-import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoles, assignRole, insertServerMessage, updateLastSeen } from '../db/database.js';
+import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers } from '../db/database.js';
 import { broadcast, send } from './handler.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel } from './channels.js';
@@ -147,6 +147,7 @@ export async function handleConnect(ws, data, msgId, ip) {
     supportedVersions,
     channels: state.getChannelList(),
     clients: state.getClientList(),
+    hasAdmin: hasAdminUsers(),
   }, msgId);
 
   broadcast('server:client-joined', {

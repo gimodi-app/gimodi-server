@@ -675,6 +675,14 @@ export function getAdminTokenCount() {
 }
 
 /**
+ * Returns true if at least one user has been assigned the admin role.
+ * @returns {boolean}
+ */
+export function hasAdminUsers() {
+  return db.prepare("SELECT COUNT(*) as c FROM user_roles WHERE role_id = 'admin'").get().c > 0;
+}
+
+/**
  * Inserts a new admin token.
  * @param {object} token
  */
