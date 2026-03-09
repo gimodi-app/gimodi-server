@@ -793,6 +793,22 @@ export function getUserBadge(userId) {
 }
 
 /**
+ * Returns the role color for a user from their highest-priority role.
+ * @param {string} userId
+ * @returns {string|null}
+ */
+export function getUserRoleColor(userId) {
+  const row = db.prepare(`
+    SELECT r.color FROM roles r
+    JOIN user_roles ur ON ur.role_id = r.id
+    WHERE ur.user_id = ? AND r.color IS NOT NULL
+    ORDER BY r.name
+    LIMIT 1
+  `).get(userId);
+  return row ? row.color : null;
+}
+
+/**
  * Assigns a role to a user (idempotent).
  * @param {string} userId
  * @param {string} roleId
@@ -819,7 +835,7 @@ export function removeRole(userId, roleId) {
  */
 export function getUserRoles(userId) {
   return db.prepare(`
-    SELECT r.id, r.name, r.badge FROM roles r
+    SELECT r.id, r.name, r.badge, r.color FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ?
     ORDER BY r.name
@@ -854,8 +870,8 @@ export function getRoleMembers(roleId) {
  */
 export function createRole(role) {
   db.prepare(
-    "INSERT INTO roles (id, name, badge) VALUES (@id, @name, @badge)"
-  ).run({ id: role.id, name: role.name, badge: role.badge ?? null });
+    "INSERT INTO roles (id, name, badge, color) VALUES (@id, @name, @badge, @color)"
+  ).run({ id: role.id, name: role.name, badge: role.badge ?? null, color: role.color ?? null });
 }
 
 /**
@@ -868,6 +884,7 @@ export function updateRole(id, props) {
   const params = { id };
   if (props.name !== undefined) { sets.push('name = @name'); params.name = props.name; }
   if (props.badge !== undefined) { sets.push('badge = @badge'); params.badge = props.badge; }
+  if (props.color !== undefined) { sets.push('color = @color'); params.color = props.color; }
   if (sets.length === 0) return;
   db.prepare(`UPDATE roles SET ${sets.join(', ')} WHERE id = @id`).run(params);
 }

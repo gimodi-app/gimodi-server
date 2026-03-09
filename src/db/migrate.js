@@ -1,12 +1,14 @@
 import db from './database.js';
 import migration001 from './migrations/001-fix-file-urls.js';
 import migration002 from './migrations/002-bans-nickname.js';
+import migration003 from './migrations/003-role-color.js';
 import logger from '../logger.js';
 
 /** @type {Array<[string, function]>} */
 const MIGRATIONS = [
   ['001-fix-file-urls', migration001],
   ['002-bans-nickname', migration002],
+  ['003-role-color', migration003],
 ];
 
 /**

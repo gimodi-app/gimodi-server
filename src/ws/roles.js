@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import state from '../state.js';
 import { PERMISSIONS, ALL_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from '../permissions.js';
-import { getUserRoles, getUserPermissions, getUserBadge, assignRole, removeRole, getRoles, createRole, updateRole, deleteRole, getRolePermissions, setRolePermissions, getRoleMembers, getIdentity, logAuditEvent } from '../db/database.js';
+import { getUserRoles, getUserPermissions, getUserBadge, getUserRoleColor, assignRole, removeRole, getRoles, createRole, updateRole, deleteRole, getRolePermissions, setRolePermissions, getRoleMembers, getIdentity, logAuditEvent } from '../db/database.js';
 import { send, broadcast } from './handler.js';
 
 /**
@@ -26,7 +26,8 @@ function refreshOnlineUserPermissions(userId) {
     if (c.userId === userId) {
       c.permissions = getUserPermissions(userId);
       c.badge = getUserBadge(userId);
-      broadcast('server:admin-changed', { clientId: c.id, badge: c.badge });
+      c.roleColor = getUserRoleColor(userId);
+      broadcast('server:admin-changed', { clientId: c.id, badge: c.badge, roleColor: c.roleColor });
       send(c.ws, 'server:permissions-changed', { permissions: [...c.permissions] });
     }
   }
@@ -204,6 +205,7 @@ export function handleRoleList(client, data, id) {
     id: r.id,
     name: r.name,
     badge: r.badge,
+    color: r.color,
     permissions: getRolePermissions(r.id),
   }));
   send(client.ws, 'role:list-result', { roles: rolesWithPerms }, id);
@@ -242,17 +244,17 @@ export function handleRoleCreate(client, data, id) {
   if (!client.permissions.has(PERMISSIONS.ROLE_MANAGE)) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'Admin access required.' }, id);
   }
-  const { name, badge } = data;
+  const { name, badge, color } = data;
   if (!name || typeof name !== 'string' || !name.trim()) {
     return send(client.ws, 'server:error', { code: 'INVALID_NAME', message: 'Role name is required.' }, id);
   }
   const roleId = randomUUID();
   try {
-    createRole({ id: roleId, name: name.trim(), badge: badge || null });
+    createRole({ id: roleId, name: name.trim(), badge: badge || null, color: color || null });
   } catch (err) {
     return send(client.ws, 'server:error', { code: 'DUPLICATE_NAME', message: 'A role with that name already exists.' }, id);
   }
-  send(client.ws, 'role:created', { id: roleId, name: name.trim(), badge: badge || null, permissions: [] }, id);
+  send(client.ws, 'role:created', { id: roleId, name: name.trim(), badge: badge || null, color: color || null, permissions: [] }, id);
 
   logAuditEvent('role_create', client.userId, client.nickname, null, null, `Role: ${name.trim()}`);
 }
@@ -266,7 +268,7 @@ export function handleRoleUpdate(client, data, id) {
   if (!client.permissions.has(PERMISSIONS.ROLE_MANAGE)) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'Admin access required.' }, id);
   }
-  const { roleId, name, badge } = data;
+  const { roleId, name, badge, color } = data;
   if (!roleId) {
     return send(client.ws, 'server:error', { code: 'INVALID_ROLE', message: 'roleId is required.' }, id);
   }
@@ -275,19 +277,26 @@ export function handleRoleUpdate(client, data, id) {
     return send(client.ws, 'server:error', { code: 'INVALID_ROLE', message: 'Cannot rename a built-in role.' }, id);
   }
   try {
-    updateRole(roleId, isStatic ? { badge } : { name, badge });
+    updateRole(roleId, isStatic ? { badge, color } : { name, badge, color });
   } catch (err) {
     return send(client.ws, 'server:error', { code: 'UPDATE_FAILED', message: err.message }, id);
   }
-  send(client.ws, 'role:updated', { roleId, name, badge }, id);
+  send(client.ws, 'role:updated', { roleId, name, badge, color }, id);
+
+  const affectedUserIds = getRoleMembers(roleId).map(m => m.user_id);
 
   for (const c of state.clients.values()) {
     if (!c.userId) continue;
     const userRoles = getUserRoles(c.userId);
     if (userRoles.some(r => r.id === roleId)) {
       c.badge = getUserBadge(c.userId);
-      broadcast('server:admin-changed', { clientId: c.id, badge: c.badge });
+      c.roleColor = getUserRoleColor(c.userId);
+      broadcast('server:admin-changed', { clientId: c.id, badge: c.badge, roleColor: c.roleColor });
     }
+  }
+
+  if (color !== undefined) {
+    broadcast('role:color-changed', { roleColor: color || null, userIds: affectedUserIds });
   }
 }
 

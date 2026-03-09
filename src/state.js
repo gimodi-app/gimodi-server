@@ -217,6 +217,7 @@ class ServerState {
       nickname: c.nickname,
       channelId: c.channelId,
       badge: c.badge || null,
+      roleColor: c.roleColor || null,
       muted: !!c.muted,
       deafened: !!c.deafened,
     }));

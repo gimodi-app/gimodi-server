@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 const MAX_MESSAGE_LENGTH = 4000;
 import state from '../state.js';
 import config from '../config.js';
-import { insertMessage, getMessages, getMessagesAround, getMessage, updateMessage, deleteMessage, updateMessagePreviews, clearMessagePreviews, insertDmMessage, getDmMessages, getUserBadge, insertServerMessage, getServerMessages, getServerMessage, deleteServerMessage, addReaction, removeReaction, getReactions, pinMessage, unpinMessage, getPinnedMessages, isMessagePinned, getUserRoles, getIdentity, getChannelFiles, getFile, deleteFile, getMessageByFileId, searchMessages } from '../db/database.js';
+import { insertMessage, getMessages, getMessagesAround, getMessage, updateMessage, deleteMessage, updateMessagePreviews, clearMessagePreviews, insertDmMessage, getDmMessages, getUserBadge, getUserRoleColor, insertServerMessage, getServerMessages, getServerMessage, deleteServerMessage, addReaction, removeReaction, getReactions, pinMessage, unpinMessage, getPinnedMessages, isMessagePinned, getUserRoles, getIdentity, getChannelFiles, getFile, deleteFile, getMessageByFileId, searchMessages } from '../db/database.js';
 import { rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { send } from './handler.js';
@@ -187,6 +187,7 @@ export function handleChatSend(client, data, msgId) {
     userId: client.userId || null,
     nickname: client.nickname,
     badge: client.badge || null,
+    roleColor: client.roleColor || null,
     content: message.content,
     replyTo: message.replyTo,
     replyToNickname: message.replyToNickname,
@@ -349,14 +350,18 @@ export function handleChatHistory(client, data, msgId) {
   });
 
   const badgeCache = new Map();
+  const colorCache = new Map();
   const messages = rows.map(r => {
     const userId = r.user_id || null;
     let badge;
+    let roleColor = null;
     if (userId) {
       if (!badgeCache.has(userId)) {
         badgeCache.set(userId, getUserBadge(userId) ?? null);
+        colorCache.set(userId, getUserRoleColor(userId) ?? null);
       }
       badge = badgeCache.get(userId) ?? null;
+      roleColor = colorCache.get(userId) ?? null;
     } else {
       badge = r.badge || null;
     }
@@ -367,6 +372,7 @@ export function handleChatHistory(client, data, msgId) {
       clientId: r.client_id,
       userId,
       badge,
+      roleColor,
       content: r.content,
       replyTo: r.reply_to || undefined,
       replyToNickname: r.reply_to_nickname || undefined,
@@ -404,14 +410,18 @@ export function handleChatContext(client, data, msgId) {
   const rows = getMessagesAround(channelId, timestamp, 25);
 
   const badgeCache = new Map();
+  const colorCache = new Map();
   const messages = rows.map(r => {
     const userId = r.user_id || null;
     let badge;
+    let roleColor = null;
     if (userId) {
       if (!badgeCache.has(userId)) {
         badgeCache.set(userId, getUserBadge(userId) ?? null);
+        colorCache.set(userId, getUserRoleColor(userId) ?? null);
       }
       badge = badgeCache.get(userId) ?? null;
+      roleColor = colorCache.get(userId) ?? null;
     } else {
       badge = r.badge || null;
     }
@@ -421,6 +431,7 @@ export function handleChatContext(client, data, msgId) {
       clientId: r.client_id,
       userId,
       badge,
+      roleColor,
       content: r.content,
       timestamp: r.created_at,
       replyTo: r.reply_to || undefined,
@@ -476,6 +487,7 @@ export function handleServerChatSend(client, data, msgId) {
     clientId: client.id,
     nickname: client.nickname,
     badge: client.badge || null,
+    roleColor: client.roleColor || null,
     content: trimmed,
     timestamp: createdAt,
   };
@@ -504,14 +516,18 @@ export function handleServerChatHistory(client, data, msgId) {
   });
 
   const badgeCache = new Map();
+  const colorCache = new Map();
   const messages = rows.map(r => {
     const userId = r.user_id || null;
     let badge;
+    let roleColor = null;
     if (userId) {
       if (!badgeCache.has(userId)) {
         badgeCache.set(userId, getUserBadge(userId) ?? null);
+        colorCache.set(userId, getUserRoleColor(userId) ?? null);
       }
       badge = badgeCache.get(userId) ?? null;
+      roleColor = colorCache.get(userId) ?? null;
     } else {
       badge = r.badge || null;
     }
@@ -521,6 +537,7 @@ export function handleServerChatHistory(client, data, msgId) {
       userId,
       clientId: r.client_id,
       badge,
+      roleColor,
       content: r.content,
       timestamp: r.created_at,
     };
@@ -1092,14 +1109,18 @@ export function handleChatSearch(client, data, msgId) {
   });
 
   const badgeCache = new Map();
+  const colorCache = new Map();
   const messages = rows.map(r => {
     const userId = r.user_id || null;
     let badge;
+    let roleColor = null;
     if (userId) {
       if (!badgeCache.has(userId)) {
         badgeCache.set(userId, getUserBadge(userId) ?? null);
+        colorCache.set(userId, getUserRoleColor(userId) ?? null);
       }
       badge = badgeCache.get(userId) ?? null;
+      roleColor = colorCache.get(userId) ?? null;
     } else {
       badge = r.badge || null;
     }
@@ -1109,6 +1130,7 @@ export function handleChatSearch(client, data, msgId) {
       clientId: r.client_id,
       userId,
       badge,
+      roleColor,
       content: r.content,
       timestamp: r.created_at,
     };
