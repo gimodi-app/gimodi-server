@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 const MAX_MESSAGE_LENGTH = 4000;
 import state from '../state.js';
 import config from '../config.js';
+import { incrementCounter } from '../metrics.js';
 import { insertMessage, getMessages, getMessagesAround, getMessage, updateMessage, deleteMessage, updateMessagePreviews, clearMessagePreviews, insertDmMessage, getDmMessages, getUserBadge, getUserRoleColor, insertServerMessage, getServerMessages, getServerMessage, deleteServerMessage, addReaction, removeReaction, getReactions, pinMessage, unpinMessage, getPinnedMessages, isMessagePinned, getUserRoles, getIdentity, getChannelFiles, getFile, deleteFile, getMessageByFileId, searchMessages } from '../db/database.js';
 import { rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
@@ -204,6 +205,8 @@ export function handleChatSend(client, data, msgId) {
     timestamp: message.createdAt,
   };
 
+  incrementCounter('messagesTotal');
+
   const notified = new Set(channel.clients);
   for (const peerId of notified) {
     const peer = state.clients.get(peerId);
@@ -286,6 +289,8 @@ export function handleDmSend(client, data, msgId) {
     timestamp,
     encrypted: true,
   };
+
+  incrementCounter('dmMessagesTotal');
 
   send(target.ws, 'chat:dm-receive', msgData);
   if (targetId !== client.id) {

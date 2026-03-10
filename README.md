@@ -50,6 +50,7 @@ Settings are stored in the SQLite database (`data/gimodi.db` in the `server_conf
 | `GIMODI_SSL_KEY_PATH`                   | `ssl.keyPath`                 | string  | `./data/key.pem`  | Path to SSL private key (auto-generated if missing)                      |
 | `GIMODI_ICON_HASH`                      | `icon.hash`                   | string  | `null`            | Server icon SHA-256 hash (managed automatically)                         |
 | `GIMODI_ICON_FILENAME`                  | `icon.filename`               | string  | `null`            | Server icon filename (managed automatically)                             |
+| `GIMODI_METRICS_ENABLED`                | `metrics.enabled`             | boolean | `false`           | Enable Prometheus metrics endpoint at `/metrics`                         |
 
 Boolean values accept `true`/`1` for true, anything else for false. Set to `null` or empty string to clear a value.
 

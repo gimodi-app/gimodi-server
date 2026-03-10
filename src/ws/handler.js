@@ -14,6 +14,7 @@ import { handleGetUserRoles, handleAssignRole, handleRemoveRole, handleAssignRol
 import { handleKick, handleBan, handlePoke, handleListBans, handleRemoveBan, handleGetAuditLog, handleMoveUser, handleListUsers, handleDeleteUser, handleBulkDeleteUsers, handleBanByUserId, handleDeleteNickname } from './admin.js';
 import { handleGetUserInfo, handleGetPublicKey, handleGetNicknames } from './users.js';
 import { handleGetSettings, handleSetSettings } from './settings.js';
+import { incrementCounter } from '../metrics.js';
 
 let wss;
 
@@ -59,6 +60,7 @@ export function initWebSocket(server) {
 
     ws.on('message', (raw) => {
       resetHeartbeat();
+      incrementCounter('websocketMessagesTotal');
 
       let msg;
       try {

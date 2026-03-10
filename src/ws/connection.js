@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import * as openpgp from 'openpgp';
 import logger from '../logger.js';
 import config from '../config.js';
+import { incrementCounter } from '../metrics.js';
 import supportedVersions from '../supportedVersions.js';
 
 const require = createRequire(import.meta.url);
@@ -152,6 +153,7 @@ export async function handleConnect(ws, data, msgId, ip) {
 
   state.addClient(client);
   ws._clientId = clientId;
+  incrementCounter('connectionsTotal');
 
   send(ws, 'server:welcome', {
     clientId,

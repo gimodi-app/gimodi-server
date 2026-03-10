@@ -33,6 +33,9 @@ const defaults = {
     hash: null,
     filename: null,
   },
+  metrics: {
+    enabled: false,
+  },
 };
 
 /** @type {Record<string, {key: string, type: string}>} */
@@ -58,6 +61,7 @@ const ENV_MAP = {
   GIMODI_SSL_KEY_PATH:                 { key: 'ssl.keyPath', type: 'string' },
   GIMODI_ICON_HASH:                    { key: 'icon.hash', type: 'string' },
   GIMODI_ICON_FILENAME:               { key: 'icon.filename', type: 'string' },
+  GIMODI_METRICS_ENABLED:             { key: 'metrics.enabled', type: 'boolean' },
 };
 
 /**

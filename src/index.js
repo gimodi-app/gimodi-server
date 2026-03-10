@@ -12,6 +12,7 @@ import { loadOrGenerateCert } from './ssl.js';
 import { setCors } from './http/utils.js';
 import { handleFileUpload, handleFileDownload } from './http/files.js';
 import { handleIconUpload, handleIconDownload, handleIconDelete } from './http/icon.js';
+import { collectMetrics } from './metrics.js';
 
 let httpServer = null;
 
@@ -59,6 +60,12 @@ async function main() {
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
+      return;
+    }
+
+    if (req.url === '/metrics' && config.metrics.enabled) {
+      res.writeHead(200, { 'Content-Type': 'text/plain; version=0.0.4; charset=utf-8' });
+      res.end(collectMetrics());
       return;
     }
 

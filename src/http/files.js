@@ -6,6 +6,7 @@ import state from '../state.js';
 import { insertFile, getFile, insertMessage } from '../db/database.js';
 import { send } from '../ws/handler.js';
 import { contentDisposition, getMimeType } from './utils.js';
+import { incrementCounter } from '../metrics.js';
 
 const uploadsDir = resolve(config.files.storagePath);
 mkdirSync(uploadsDir, { recursive: true });
@@ -117,6 +118,7 @@ export function handleFileUpload(req, res) {
         }
       }
 
+      incrementCounter('filesUploadedTotal');
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ fileId, filename: safeName, size, mimeType, url: downloadUrl }));
     });
