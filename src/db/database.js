@@ -34,9 +34,12 @@ try { db.prepare('SELECT badge FROM roles LIMIT 0').get(); } catch {
 try { db.prepare('SELECT badge FROM messages LIMIT 0').get(); } catch {
   db.exec("ALTER TABLE messages ADD COLUMN badge TEXT");
 }
+try { db.prepare('SELECT position FROM roles LIMIT 0').get(); } catch {
+  db.exec("ALTER TABLE roles ADD COLUMN position INTEGER NOT NULL DEFAULT 0");
+}
 
-db.prepare("INSERT OR IGNORE INTO roles (id, name, badge) VALUES ('admin', 'Admin', 'Admin')").run();
-db.prepare("INSERT OR IGNORE INTO roles (id, name, badge) VALUES ('user', 'User', NULL)").run();
+db.prepare("INSERT OR IGNORE INTO roles (id, name, badge, position) VALUES ('admin', 'Admin', 'Admin', 0)").run();
+db.prepare("INSERT OR IGNORE INTO roles (id, name, badge, position) VALUES ('user', 'User', NULL, 1)").run();
 
 for (const perm of ALL_PERMISSIONS) {
   db.prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission) VALUES ('admin', ?)").run(perm);
@@ -843,7 +846,7 @@ export function getUserBadge(userId) {
     SELECT r.badge FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ? AND r.badge IS NOT NULL
-    ORDER BY r.name
+    ORDER BY r.position
     LIMIT 1
   `).get(userId);
   return row ? row.badge : null;
@@ -859,7 +862,7 @@ export function getUserRoleColor(userId) {
     SELECT r.color FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ? AND r.color IS NOT NULL
-    ORDER BY r.name
+    ORDER BY r.position
     LIMIT 1
   `).get(userId);
   return row ? row.color : null;
@@ -892,10 +895,10 @@ export function removeRole(userId, roleId) {
  */
 export function getUserRoles(userId) {
   return db.prepare(`
-    SELECT r.id, r.name, r.badge, r.color FROM roles r
+    SELECT r.id, r.name, r.badge, r.color, r.position FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ?
-    ORDER BY r.name
+    ORDER BY r.position
   `).all(userId);
 }
 
@@ -904,7 +907,7 @@ export function getUserRoles(userId) {
  * @returns {object[]}
  */
 export function getRoles() {
-  return db.prepare('SELECT * FROM roles ORDER BY name').all();
+  return db.prepare('SELECT * FROM roles ORDER BY position').all();
 }
 
 /**
@@ -925,10 +928,57 @@ export function getRoleMembers(roleId) {
  * Creates a new role.
  * @param {object} role
  */
+/**
+ * Returns the best (lowest) position among all roles assigned to a user.
+ * Lower position = higher rank. Returns Infinity if the user has no roles.
+ * @param {string} userId
+ * @returns {number}
+ */
+export function getUserHighestRolePosition(userId) {
+  const row = db.prepare(`
+    SELECT MIN(r.position) AS pos FROM roles r
+    JOIN user_roles ur ON ur.role_id = r.id
+    WHERE ur.user_id = ?
+  `).get(userId);
+  return row?.pos ?? Infinity;
+}
+
+/**
+ * Returns a role's position in the hierarchy.
+ * @param {string} roleId
+ * @returns {number}
+ */
+export function getRolePosition(roleId) {
+  const row = db.prepare('SELECT position FROM roles WHERE id = ?').get(roleId);
+  return row?.position ?? Infinity;
+}
+
+/**
+ * Updates positions for multiple roles in a transaction.
+ * @param {Array<{id: string, position: number}>} entries
+ */
+export function updateRolePositions(entries) {
+  const stmt = db.prepare('UPDATE roles SET position = ? WHERE id = ?');
+  db.transaction(() => {
+    for (const { id, position } of entries) {
+      stmt.run(position, id);
+    }
+  })();
+}
+
+/**
+ * Returns the next available position for a new role (max + 1).
+ * @returns {number}
+ */
+export function getNextRolePosition() {
+  const row = db.prepare('SELECT MAX(position) AS maxPos FROM roles').get();
+  return (row?.maxPos ?? -1) + 1;
+}
+
 export function createRole(role) {
   db.prepare(
-    "INSERT INTO roles (id, name, badge, color) VALUES (@id, @name, @badge, @color)"
-  ).run({ id: role.id, name: role.name, badge: role.badge ?? null, color: role.color ?? null });
+    "INSERT INTO roles (id, name, badge, color, position) VALUES (@id, @name, @badge, @color, @position)"
+  ).run({ id: role.id, name: role.name, badge: role.badge ?? null, color: role.color ?? null, position: role.position ?? 0 });
 }
 
 /**

@@ -1,6 +1,6 @@
 import state from '../state.js';
 import { PERMISSIONS } from '../permissions.js';
-import { getIdentity, getNicknameByUserId } from '../db/database.js';
+import { getIdentity, getNicknameByUserId, getUserHighestRolePosition } from '../db/database.js';
 import { send } from './handler.js';
 
 /**
@@ -20,7 +20,9 @@ export function handleGetUserInfo(client, data, id) {
     clientVersion: target.clientVersion,
     connectedAt: target.connectedAt,
   };
-  if (client.permissions.has(PERMISSIONS.USER_VIEW_IP)) {
+  const actorPos = client.userId ? getUserHighestRolePosition(client.userId) : Infinity;
+  const targetPos = target.userId ? getUserHighestRolePosition(target.userId) : Infinity;
+  if (client.permissions.has(PERMISSIONS.USER_VIEW_IP) && (actorPos === 0 || actorPos < targetPos)) {
     info.ip = target.ip;
   }
   send(client.ws, 'user:info', info, id);

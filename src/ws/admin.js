@@ -1,8 +1,21 @@
 import { randomUUID } from 'node:crypto';
 import state from '../state.js';
 import { PERMISSIONS } from '../permissions.js';
-import { addBan, getAllBans, deleteBan, logAuditEvent, getAuditLog, getIdentity, getAllIdentities, getUserRoles, getUserPermissions, getUserBadge, deleteIdentity, deleteUserRoles, deleteUserDmMessages, assignRole, removeRole, isBannedByUserId, getRegisteredNicknames, deleteNicknameRegistration } from '../db/database.js';
+import { addBan, getAllBans, deleteBan, logAuditEvent, getAuditLog, getIdentity, getAllIdentities, getUserRoles, getUserPermissions, getUserBadge, deleteIdentity, deleteUserRoles, deleteUserDmMessages, assignRole, removeRole, isBannedByUserId, getRegisteredNicknames, deleteNicknameRegistration, getUserHighestRolePosition } from '../db/database.js';
 import { send, broadcast } from './handler.js';
+
+/**
+ * Checks whether the actor outranks the target in the role hierarchy.
+ * @param {object} actor
+ * @param {string|null} targetUserId
+ * @returns {boolean}
+ */
+function actorOutranksTarget(actor, targetUserId) {
+  const actorPos = actor.userId ? getUserHighestRolePosition(actor.userId) : Infinity;
+  if (actorPos === 0) return true;
+  const targetPos = targetUserId ? getUserHighestRolePosition(targetUserId) : Infinity;
+  return actorPos < targetPos;
+}
 
 /**
  * @param {object} client
@@ -17,6 +30,9 @@ export function handleKick(client, data, id) {
   const target = state.clients.get(clientId);
   if (!target) {
     return send(client.ws, 'server:error', { code: 'CLIENT_NOT_FOUND', message: 'Client not found.' }, id);
+  }
+  if (!actorOutranksTarget(client, target.userId)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot kick a user with equal or higher rank.' }, id);
   }
   const reason = data.reason || 'Kicked by admin.';
   send(target.ws, 'server:kicked', { reason });
@@ -43,6 +59,9 @@ export function handlePoke(client, data, id) {
   if (clientId === client.id) {
     return send(client.ws, 'server:error', { code: 'INVALID_TARGET', message: 'You cannot poke yourself.' }, id);
   }
+  if (!actorOutranksTarget(client, target.userId)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot poke a user with equal or higher rank.' }, id);
+  }
   const pokeMessage = (typeof message === 'string' ? message.trim().slice(0, 200) : '') || null;
   send(target.ws, 'server:poked', { fromNickname: client.nickname, message: pokeMessage });
   send(client.ws, 'admin:poke-ok', { clientId }, id);
@@ -61,6 +80,9 @@ export function handleBan(client, data, id) {
   const target = state.clients.get(clientId);
   if (!target) {
     return send(client.ws, 'server:error', { code: 'CLIENT_NOT_FOUND', message: 'Client not found.' }, id);
+  }
+  if (!actorOutranksTarget(client, target.userId)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot ban a user with equal or higher rank.' }, id);
   }
   const expiresAt = (duration && duration > 0) ? Date.now() + (duration * 1000) : null;
   const banReason = reason || 'Banned by admin.';
@@ -142,6 +164,9 @@ export async function handleMoveUser(client, data, id) {
   if (!target) {
     return send(client.ws, 'server:error', { code: 'CLIENT_NOT_FOUND', message: 'Client not found.' }, id);
   }
+  if (!actorOutranksTarget(client, target.userId)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot move a user with equal or higher rank.' }, id);
+  }
   const channel = state.channels.get(channelId);
   if (!channel) {
     return send(client.ws, 'server:error', { code: 'UNKNOWN_CHANNEL', message: 'Channel not found.' }, id);
@@ -211,6 +236,10 @@ export function handleDeleteUser(client, data, id) {
     return send(client.ws, 'server:error', { code: 'USER_NOT_FOUND', message: 'User not found.' }, id);
   }
 
+  if (!actorOutranksTarget(client, userId)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot delete a user with equal or higher rank.' }, id);
+  }
+
   for (const c of state.clients.values()) {
     if (c.userId === userId) {
       send(c.ws, 'server:kicked', { reason: 'Your identity has been deleted by an administrator.' });
@@ -245,6 +274,7 @@ export function handleBulkDeleteUsers(client, data, id) {
     if (typeof userId !== 'string') continue;
     const identity = getIdentity(userId);
     if (!identity) continue;
+    if (!actorOutranksTarget(client, userId)) continue;
 
     for (const c of state.clients.values()) {
       if (c.userId === userId) {
@@ -280,6 +310,10 @@ export function handleBanByUserId(client, data, id) {
   const identity = getIdentity(userId);
   if (!identity) {
     return send(client.ws, 'server:error', { code: 'USER_NOT_FOUND', message: 'User not found.' }, id);
+  }
+
+  if (!actorOutranksTarget(client, userId)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot ban a user with equal or higher rank.' }, id);
   }
 
   const expiresAt = (duration && duration > 0) ? Date.now() + (duration * 1000) : null;
@@ -328,6 +362,10 @@ export function handleDeleteNickname(client, data, id) {
   const { userId, nickname } = data;
   if (!userId || typeof userId !== 'string' || !nickname || typeof nickname !== 'string') {
     return send(client.ws, 'server:error', { code: 'INVALID_REQUEST', message: 'userId and nickname are required.' }, id);
+  }
+
+  if (!actorOutranksTarget(client, userId)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot manage a user with equal or higher rank.' }, id);
   }
 
   const remaining = getRegisteredNicknames(userId);

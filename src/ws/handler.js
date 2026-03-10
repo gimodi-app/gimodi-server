@@ -10,7 +10,7 @@ import { handleGetRtpCapabilities, handleRtpCapabilities, handleCreateTransport,
 import { handleScreenStart, handleScreenStop } from './screen.js';
 import { handleWebcamStart, handleWebcamStop } from './webcam.js';
 import { handleTokenRedeem, handleTokenList, handleTokenCreate, handleTokenDelete } from './tokens.js';
-import { handleGetUserRoles, handleAssignRole, handleRemoveRole, handleAssignRoleByUserId, handleRemoveRoleByUserId, handleGetUserRolesByUserId, handleRoleList, handleRoleListPermissions, handleRoleCreate, handleRoleUpdate, handleRoleDelete, handleRoleSetPermissions, handleRoleGetMembers, handleRoleRemoveMember } from './roles.js';
+import { handleGetUserRoles, handleAssignRole, handleRemoveRole, handleAssignRoleByUserId, handleRemoveRoleByUserId, handleGetUserRolesByUserId, handleRoleList, handleRoleListPermissions, handleRoleCreate, handleRoleUpdate, handleRoleDelete, handleRoleSetPermissions, handleRoleGetMembers, handleRoleRemoveMember, handleRoleReorder } from './roles.js';
 import { handleKick, handleBan, handlePoke, handleListBans, handleRemoveBan, handleGetAuditLog, handleMoveUser, handleListUsers, handleDeleteUser, handleBulkDeleteUsers, handleBanByUserId, handleDeleteNickname } from './admin.js';
 import { handleGetUserInfo, handleGetPublicKey, handleGetNicknames } from './users.js';
 import { handleGetSettings, handleSetSettings } from './settings.js';
@@ -191,6 +191,7 @@ async function routeMessage(client, type, data, id) {
       case 'role:set-permissions':     return handleRoleSetPermissions(client, data, id);
       case 'role:get-members':         return handleRoleGetMembers(client, data, id);
       case 'role:remove-member':       return handleRoleRemoveMember(client, data, id);
+      case 'role:reorder':             return handleRoleReorder(client, data, id);
 
       case 'admin:kick':              return handleKick(client, data, id);
       case 'admin:ban':               return handleBan(client, data, id);

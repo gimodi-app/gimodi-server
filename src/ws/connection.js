@@ -9,7 +9,7 @@ import supportedVersions from '../supportedVersions.js';
 const require = createRequire(import.meta.url);
 const { version: serverVersion } = require('../../package.json');
 import state from '../state.js';
-import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoleColor, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers, getNicknameOwner, registerNickname } from '../db/database.js';
+import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoleColor, getUserHighestRolePosition, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers, getNicknameOwner, registerNickname } from '../db/database.js';
 import { broadcast, send } from './handler.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
@@ -128,6 +128,7 @@ export async function handleConnect(ws, data, msgId, ip) {
   const permissions = userId ? getUserPermissions(userId) : new Set();
   const badge = userId ? getUserBadge(userId) : null;
   const roleColor = userId ? getUserRoleColor(userId) : null;
+  const rolePosition = userId ? getUserHighestRolePosition(userId) : Infinity;
 
   const client = {
     id: clientId,
@@ -147,6 +148,7 @@ export async function handleConnect(ws, data, msgId, ip) {
     deafened: false,
     badge,
     roleColor,
+    rolePosition,
     permissions,
     chatSubscriptions: new Set(),
   };
@@ -193,6 +195,7 @@ export async function handleConnect(ws, data, msgId, ip) {
     channelId: null,
     badge,
     roleColor,
+    rolePosition,
   }, clientId);
 
   broadcastServerEvent(`→ ${trimmed} joined the server`);
