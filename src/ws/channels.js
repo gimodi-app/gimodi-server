@@ -30,6 +30,10 @@ function deleteChannelFiles(channelId) {
  * @returns {boolean}
  */
 function hasChannelReadAccess(client, channel) {
+  if (channel.parentId) {
+    const parent = state.channels.get(channel.parentId);
+    if (parent && !hasChannelReadAccess(client, parent)) return false;
+  }
   if (!channel.readRoles || channel.readRoles.length === 0) return true;
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) return true;
   if (!client.userId) return false;
@@ -44,6 +48,10 @@ function hasChannelReadAccess(client, channel) {
  * @returns {boolean}
  */
 function hasChannelWriteAccess(client, channel) {
+  if (channel.parentId) {
+    const parent = state.channels.get(channel.parentId);
+    if (parent && !hasChannelWriteAccess(client, parent)) return false;
+  }
   if (!channel.writeRoles || channel.writeRoles.length === 0) return true;
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) return true;
   if (!client.userId) return false;
@@ -58,6 +66,10 @@ function hasChannelWriteAccess(client, channel) {
  * @returns {boolean}
  */
 export function hasChannelVisibility(client, channel) {
+  if (channel.parentId) {
+    const parent = state.channels.get(channel.parentId);
+    if (parent && !hasChannelVisibility(client, parent)) return false;
+  }
   if (!channel.visibilityRoles || channel.visibilityRoles.length === 0) return true;
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_VISIBILITY_RESTRICTION)) return true;
   if (client.channelId === channel.id) return true;
@@ -160,6 +172,20 @@ export async function handleJoinChannel(client, data, msgId) {
     }
     if (!hasRole) {
       return send(client.ws, 'server:error', { code: 'ROLE_RESTRICTED', message: 'You do not have the required role to join this channel.' }, msgId);
+    }
+  }
+
+  if (channel.parentId && !data._bypassRoleCheck && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_ROLE_RESTRICTION)) {
+    const parent = state.channels.get(channel.parentId);
+    if (parent && parent.allowedRoles && parent.allowedRoles.length > 0) {
+      let hasRole = false;
+      if (client.userId) {
+        const userRoles = getUserRoles(client.userId);
+        hasRole = userRoles.some(r => parent.allowedRoles.includes(r.id));
+      }
+      if (!hasRole) {
+        return send(client.ws, 'server:error', { code: 'ROLE_RESTRICTED', message: 'You do not have the required role to join this channel.' }, msgId);
+      }
     }
   }
 
@@ -590,7 +616,56 @@ export function handleUpdateChannel(client, data, msgId) {
     }
   }
 
+  if (channel.type === 'group') {
+    const aclChanged = props.visibilityRoles !== undefined || props.allowedRoles !== undefined
+      || props.readRoles !== undefined || props.writeRoles !== undefined;
+    if (aclChanged) {
+      for (const [, child] of state.channels) {
+        if (child.parentId !== channel.id) continue;
+        const childInfo = {
+          id: child.id,
+          name: child.name,
+          parentId: child.parentId,
+          hasPassword: !!child.password,
+          maxUsers: child.maxUsers,
+          description: child.description,
+          isDefault: child.isDefault,
+          sortOrder: child.sortOrder,
+          moderated: child.moderated,
+          type: child.type || 'channel',
+          isTemporary: child.isTemporary || false,
+          allowedRoles: child.allowedRoles || [],
+          writeRoles: child.writeRoles || [],
+          readRoles: child.readRoles || [],
+          visibilityRoles: child.visibilityRoles || [],
+          userCount: child.clients.size,
+        };
+        for (const c of state.clients.values()) {
+          if (hasChannelVisibility(c, child)) {
+            send(c.ws, 'channel:updated', { channel: childInfo });
+          } else {
+            send(c.ws, 'channel:deleted', { channelId: child.id });
+          }
+        }
+      }
+    }
+  }
+
   logAuditEvent('channel_update', client.userId, client.nickname, null, null, `Channel: ${channel.name}`);
+}
+
+/**
+ * Returns the filtered channel list for the requesting client based on visibility.
+ * @param {object} client
+ * @param {object} data
+ * @param {string} [msgId]
+ */
+export function handleListChannels(client, data, msgId) {
+  const channels = state.getChannelList().filter(ch => {
+    const channel = state.channels.get(ch.id);
+    return !channel || hasChannelVisibility(client, channel);
+  });
+  send(client.ws, 'channel:list', { channels }, msgId);
 }
 
 /**

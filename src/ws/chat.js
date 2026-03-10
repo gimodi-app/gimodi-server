@@ -17,6 +17,10 @@ import { PERMISSIONS } from '../permissions.js';
  * @returns {boolean}
  */
 function hasChannelReadAccess(client, channel) {
+  if (channel.parentId) {
+    const parent = state.channels.get(channel.parentId);
+    if (parent && !hasChannelReadAccess(client, parent)) return false;
+  }
   if (!channel.readRoles || channel.readRoles.length === 0) return true;
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) return true;
   if (!client.userId) return false;
@@ -31,6 +35,10 @@ function hasChannelReadAccess(client, channel) {
  * @returns {boolean}
  */
 function hasChannelWriteAccess(client, channel) {
+  if (channel.parentId) {
+    const parent = state.channels.get(channel.parentId);
+    if (parent && !hasChannelWriteAccess(client, parent)) return false;
+  }
   if (!channel.writeRoles || channel.writeRoles.length === 0) return true;
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) return true;
   if (!client.userId) return false;

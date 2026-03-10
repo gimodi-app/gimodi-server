@@ -3,7 +3,7 @@ import state from '../state.js';
 import logger from '../logger.js';
 import config from '../config.js';
 import { handleConnect, handleDisconnect } from './connection.js';
-import { handleJoinChannel, handleLeaveChannel, handleCreateChannel, handleDeleteChannel, handleUpdateChannel } from './channels.js';
+import { handleJoinChannel, handleLeaveChannel, handleCreateChannel, handleDeleteChannel, handleUpdateChannel, handleListChannels } from './channels.js';
 import { handleChatSend, handleChatHistory, handleChatContext, handleChatDelete, handleChatEdit, handleRemovePreview, handleDmSend, handleDmHistory, handleServerChatSend, handleServerChatHistory, handleServerChatDelete, handleTypingIndicator, handleReact, handleUnreact, handlePinMessage, handleUnpinMessage, handleChatSubscribe, handleChatUnsubscribe, handleFileList, handleFileDelete, handleChatSearch } from './chat.js';
 import { handleChatCommand } from './commands.js';
 import { handleGetRtpCapabilities, handleRtpCapabilities, handleCreateTransport, handleConnectTransport, handleProduce, handleConsumerResume, handleMuteState, handleVoiceRequest, handleVoiceCancelRequest, handleGrantVoice, handleRevokeVoice } from './voice.js';
@@ -123,6 +123,7 @@ async function routeMessage(client, type, data, id) {
       case 'channel:create':          return handleCreateChannel(client, data, id);
       case 'channel:delete':          return handleDeleteChannel(client, data, id);
       case 'channel:update':          return handleUpdateChannel(client, data, id);
+      case 'channel:list':            return handleListChannels(client, data, id);
 
       case 'user:get-info':           return handleGetUserInfo(client, data, id);
       case 'user:get-public-key':     return handleGetPublicKey(client, data, id);
