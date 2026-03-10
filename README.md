@@ -27,31 +27,31 @@ Settings are stored in the SQLite database (`data/gimodi.db` in the `server_conf
 
 ### Environment Variables
 
-| Environment Variable                    | Config Key                    | Type    | Default           | Description                                                              |
-|-----------------------------------------|-------------------------------|---------|-------------------|--------------------------------------------------------------------------|
-| `GIMODI_NAME`                           | `name`                        | string  | `Gimodi Server`   | Server display name                                                      |
-| `GIMODI_PORT`                           | `port`                        | number  | `6833`            | HTTPS/WSS listen port                                                    |
-| `GIMODI_PASSWORD`                       | `password`                    | string  | `null`            | Server password (null = no password)                                     |
-| `GIMODI_MAX_CLIENTS`                    | `maxClients`                  | number  | `100`             | Maximum concurrent clients                                               |
-| `GIMODI_MAX_CONNECTIONS_PER_IP`         | `maxConnectionsPerIp`         | number  | `5`               | Maximum WebSocket connections per IP                                     |
-| `GIMODI_MEDIA_LISTEN_IP`                | `media.listenIp`              | string  | `0.0.0.0`         | IP for mediasoup WebRTC transports                                       |
-| `GIMODI_MEDIA_ANNOUNCED_IP`             | `media.announcedIp`           | string  | `null`            | Public IP announced to clients (required for NAT/cloud)                  |
-| `GIMODI_MEDIA_RTC_PORT`                 | `media.rtcPort`               | number  | `40000`           | Base port for WebRTC (one port per worker)                               |
-| `GIMODI_MEDIA_WORKERS`                  | `media.workers`               | number  | `0`               | Number of mediasoup workers (0 = auto-detect CPU cores)                  |
-| `GIMODI_MEDIA_LOG_LEVEL`                | `media.logLevel`              | string  | `warn`            | mediasoup log level (`debug`, `warn`, `error`, `none`)                   |
-| `GIMODI_CHAT_PERSIST_MESSAGES`          | `chat.persistMessages`        | boolean | `true`            | Persist chat messages to database                                        |
-| `GIMODI_CHAT_TEMP_CHANNEL_DELETE_DELAY` | `chat.tempChannelDeleteDelay` | number  | `180`             | Seconds before empty temporary channels are deleted                      |
-| `GIMODI_FILES_MAX_FILE_SIZE`            | `files.maxFileSize`           | number  | `10737418240`     | Max file upload size in bytes (default 10 GB)                            |
-| `GIMODI_FILES_STORAGE_PATH`             | `files.storagePath`           | string  | `./data/uploads`  | File upload storage directory                                            |
-| `GIMODI_FILES_PUBLIC_URL`               | `files.publicUrl`             | string  | `null`            | Public base URL for file downloads (null = auto-detect from Host header) |
-| `GIMODI_DEFAULT_CHANNEL_ID`             | `defaultChannelId`            | string  | `null`            | Override default channel (null = use DB is_default flag)                 |
-| `GIMODI_GENERATE_ADMIN_TOKEN`           | `generateAdminToken`          | boolean | `false`           | Generate a temporary admin token on every startup (expires in 1 hour)    |
-| `GIMODI_SSL_CERT_PATH`                  | `ssl.certPath`                | string  | `./data/cert.pem` | Path to SSL certificate (auto-generated if missing)                      |
-| `GIMODI_SSL_KEY_PATH`                   | `ssl.keyPath`                 | string  | `./data/key.pem`  | Path to SSL private key (auto-generated if missing)                      |
-| `GIMODI_ICON_HASH`                      | `icon.hash`                   | string  | `null`            | Server icon SHA-256 hash (managed automatically)                         |
-| `GIMODI_ICON_FILENAME`                  | `icon.filename`               | string  | `null`            | Server icon filename (managed automatically)                             |
-| `GIMODI_METRICS_ENABLED`                | `metrics.enabled`             | boolean | `false`           | Enable Prometheus metrics endpoint at `/metrics`                         |
-| `GIMODI_METRICS_ALLOWED_NETWORK`        | `metrics.allowedNetwork`      | string  | `0.0.0.0/0`      | CIDR range allowed to access `/metrics` (e.g. `10.24.0.0/16`)           |
+| Environment Variable                    | Type    | Default           | Description                                                              |
+|-----------------------------------------|---------|-------------------|--------------------------------------------------------------------------|
+| `GIMODI_NAME`                           | string  | `Gimodi Server`   | Server display name                                                      |
+| `GIMODI_PORT`                           | number  | `6833`            | HTTPS/WSS listen port                                                    |
+| `GIMODI_PASSWORD`                       | string  | `null`            | Server password (null = no password)                                     |
+| `GIMODI_MAX_CLIENTS`                    | number  | `100`             | Maximum concurrent clients                                               |
+| `GIMODI_MAX_CONNECTIONS_PER_IP`         | number  | `5`               | Maximum WebSocket connections per IP                                     |
+| `GIMODI_MEDIA_LISTEN_IP`                | string  | `0.0.0.0`         | IP for mediasoup WebRTC transports                                       |
+| `GIMODI_MEDIA_ANNOUNCED_IP`             | string  | `null`            | Public IP announced to clients (required for NAT/cloud)                  |
+| `GIMODI_MEDIA_RTC_PORT`                 | number  | `40000`           | Base port for WebRTC (one port per worker)                               |
+| `GIMODI_MEDIA_WORKERS`                  | number  | `0`               | Number of mediasoup workers (0 = auto-detect CPU cores)                  |
+| `GIMODI_MEDIA_LOG_LEVEL`                | string  | `warn`            | mediasoup log level (`debug`, `warn`, `error`, `none`)                   |
+| `GIMODI_CHAT_PERSIST_MESSAGES`          | boolean | `true`            | Persist chat messages to database                                        |
+| `GIMODI_CHAT_TEMP_CHANNEL_DELETE_DELAY` | number  | `180`             | Seconds before empty temporary channels are deleted                      |
+| `GIMODI_FILES_MAX_FILE_SIZE`            | number  | `10737418240`     | Max file upload size in bytes (default 10 GB)                            |
+| `GIMODI_FILES_STORAGE_PATH`             | string  | `./data/uploads`  | File upload storage directory                                            |
+| `GIMODI_FILES_PUBLIC_URL`               | string  | `null`            | Public base URL for file downloads (null = auto-detect from Host header) |
+| `GIMODI_DEFAULT_CHANNEL_ID`             | string  | `null`            | Override default channel (null = use DB is_default flag)                 |
+| `GIMODI_GENERATE_ADMIN_TOKEN`           | boolean | `false`           | Generate a temporary admin token on every startup (expires in 1 hour)    |
+| `GIMODI_SSL_CERT_PATH`                  | string  | `./data/cert.pem` | Path to SSL certificate (auto-generated if missing)                      |
+| `GIMODI_SSL_KEY_PATH`                   | string  | `./data/key.pem`  | Path to SSL private key (auto-generated if missing)                      |
+| `GIMODI_ICON_HASH`                      | string  | `null`            | Server icon SHA-256 hash (managed automatically)                         |
+| `GIMODI_ICON_FILENAME`                  | string  | `null`            | Server icon filename (managed automatically)                             |
+| `GIMODI_METRICS_ENABLED`                | boolean | `false`           | Enable Prometheus metrics endpoint at `/metrics`                         |
+| `GIMODI_METRICS_ALLOWED_NETWORK`        | string  | `0.0.0.0/0`       | CIDR range allowed to access `/metrics` (e.g. `10.24.0.0/16`)            |
 
 Boolean values accept `true`/`1` for true, anything else for false. Set to `null` or empty string to clear a value.
 
