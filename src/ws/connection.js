@@ -11,7 +11,7 @@ import state from '../state.js';
 import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoleColor, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers } from '../db/database.js';
 import { broadcast, send } from './handler.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
-import { checkTemporaryChannel } from './channels.js';
+import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
 
 /**
  * Broadcasts a server event message to all connected clients.
@@ -148,7 +148,10 @@ export async function handleConnect(ws, data, msgId, ip) {
     maxFileSize: config.files.maxFileSize,
     tempChannelDeleteDelay: config.chat.tempChannelDeleteDelay || 180,
     supportedVersions,
-    channels: state.getChannelList(),
+    channels: state.getChannelList().filter(ch => {
+      const channel = state.channels.get(ch.id);
+      return !channel || hasChannelVisibility(client, channel);
+    }),
     clients: state.getClientList(),
     hasAdmin: hasAdminUsers(),
   }, msgId);

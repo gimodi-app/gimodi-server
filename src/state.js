@@ -1,4 +1,4 @@
-import { getAllChannels, getDefaultChannel, getAllChannelAllowedRoles, getAllChannelWriteRoles, getAllChannelReadRoles, getLastMessageTimestamps } from './db/database.js';
+import { getAllChannels, getDefaultChannel, getAllChannelAllowedRoles, getAllChannelWriteRoles, getAllChannelReadRoles, getAllChannelVisibilityRoles, getLastMessageTimestamps } from './db/database.js';
 import config from './config.js';
 import logger from './logger.js';
 
@@ -40,6 +40,7 @@ import logger from './logger.js';
  * @property {string[]} allowedRoles
  * @property {string[]} writeRoles
  * @property {string[]} readRoles
+ * @property {string[]} visibilityRoles
  * @property {Set<string>} clients
  * @property {object|null} router
  * @property {Set<string>} voiceGranted
@@ -64,6 +65,7 @@ class ServerState {
     const allowedRolesMap = getAllChannelAllowedRoles();
     const writeRolesMap = getAllChannelWriteRoles();
     const readRolesMap = getAllChannelReadRoles();
+    const visibilityRolesMap = getAllChannelVisibilityRoles();
     const lastMessageMap = getLastMessageTimestamps();
     for (const row of rows) {
       this.channels.set(row.id, {
@@ -81,6 +83,7 @@ class ServerState {
         allowedRoles: allowedRolesMap.get(row.id) || [],
         writeRoles: writeRolesMap.get(row.id) || [],
         readRoles: readRolesMap.get(row.id) || [],
+        visibilityRoles: visibilityRolesMap.get(row.id) || [],
         clients: new Set(),
         router: null,
         voiceGranted: new Set(),
@@ -201,6 +204,7 @@ class ServerState {
       allowedRoles: ch.allowedRoles || [],
       writeRoles: ch.writeRoles || [],
       readRoles: ch.readRoles || [],
+      visibilityRoles: ch.visibilityRoles || [],
       userCount: ch.clients.size,
       lastMessageAt: ch.lastMessageAt || null,
     }));

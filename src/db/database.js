@@ -119,6 +119,15 @@ try { db.prepare('SELECT channel_id FROM channel_write_roles LIMIT 0').get(); } 
     );
   `);
 }
+try { db.prepare('SELECT channel_id FROM channel_visibility_roles LIMIT 0').get(); } catch {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channel_visibility_roles (
+      channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+      role_id    TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+      PRIMARY KEY (channel_id, role_id)
+    );
+  `);
+}
 try { db.prepare('SELECT id FROM reactions LIMIT 0').get(); } catch {
   db.exec(`
     CREATE TABLE IF NOT EXISTS reactions (
@@ -1050,6 +1059,36 @@ export function setChannelWriteRoles(channelId, roleIds) {
  */
 export function getAllChannelWriteRoles() {
   const rows = db.prepare('SELECT channel_id, role_id FROM channel_write_roles').all();
+  const map = new Map();
+  for (const row of rows) {
+    if (!map.has(row.channel_id)) map.set(row.channel_id, []);
+    map.get(row.channel_id).push(row.role_id);
+  }
+  return map;
+}
+
+/**
+ * Replaces the visibility-restricted roles for a channel.
+ * @param {string} channelId
+ * @param {string[]} roleIds
+ */
+export function setChannelVisibilityRoles(channelId, roleIds) {
+  const del = db.prepare('DELETE FROM channel_visibility_roles WHERE channel_id = ?');
+  const ins = db.prepare('INSERT OR IGNORE INTO channel_visibility_roles (channel_id, role_id) VALUES (?, ?)');
+  db.transaction(() => {
+    del.run(channelId);
+    for (const roleId of roleIds) {
+      ins.run(channelId, roleId);
+    }
+  })();
+}
+
+/**
+ * Returns a map of channel IDs to their visibility-restricted role ID arrays.
+ * @returns {Map<string, string[]>}
+ */
+export function getAllChannelVisibilityRoles() {
+  const rows = db.prepare('SELECT channel_id, role_id FROM channel_visibility_roles').all();
   const map = new Map();
   for (const row of rows) {
     if (!map.has(row.channel_id)) map.set(row.channel_id, []);

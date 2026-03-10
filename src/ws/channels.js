@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import state from '../state.js';
-import { insertChannel, deleteChannel as dbDeleteChannel, updateChannel as dbUpdateChannel, getUserRoles, setChannelAllowedRoles, setChannelWriteRoles, setChannelReadRoles, logAuditEvent, getChannelFileIds } from '../db/database.js';
+import { insertChannel, deleteChannel as dbDeleteChannel, updateChannel as dbUpdateChannel, getUserRoles, setChannelAllowedRoles, setChannelWriteRoles, setChannelReadRoles, setChannelVisibilityRoles, logAuditEvent, getChannelFileIds } from '../db/database.js';
 import { send, broadcast } from './handler.js';
 import { ensureRouter, cleanupClientMedia, maybeCloseRouter, createConsumersForProducer, consumeExistingProducers } from '../media/room.js';
 import { PERMISSIONS } from '../permissions.js';
@@ -49,6 +49,21 @@ function hasChannelWriteAccess(client, channel) {
   if (!client.userId) return false;
   const userRoles = getUserRoles(client.userId);
   return userRoles.some(r => channel.writeRoles.includes(r.id));
+}
+
+/**
+ * Checks if a client can see a channel based on visibility role restrictions.
+ * @param {object} client
+ * @param {object} channel
+ * @returns {boolean}
+ */
+export function hasChannelVisibility(client, channel) {
+  if (!channel.visibilityRoles || channel.visibilityRoles.length === 0) return true;
+  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_VISIBILITY_RESTRICTION)) return true;
+  if (client.channelId === channel.id) return true;
+  if (!client.userId) return false;
+  const userRoles = getUserRoles(client.userId);
+  return userRoles.some(r => channel.visibilityRoles.includes(r.id));
 }
 
 /**
@@ -102,6 +117,10 @@ export function handleLeaveChannel(client, data, msgId) {
   }
 
   send(client.ws, 'channel:left', { channelId }, msgId);
+
+  if (channel && !hasChannelVisibility(client, channel)) {
+    send(client.ws, 'channel:deleted', { channelId });
+  }
 }
 
 /**
@@ -127,6 +146,10 @@ export async function handleJoinChannel(client, data, msgId) {
 
   if (channel.maxUsers && channel.clients.size >= channel.maxUsers && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_USER_LIMIT)) {
     return send(client.ws, 'server:error', { code: 'CHANNEL_FULL', message: 'Channel is full.' }, msgId);
+  }
+
+  if (!data._bypassRoleCheck && !hasChannelVisibility(client, channel)) {
+    return send(client.ws, 'server:error', { code: 'CHANNEL_HIDDEN', message: 'Channel not found.' }, msgId);
   }
 
   if (channel.allowedRoles && channel.allowedRoles.length > 0 && !data._bypassRoleCheck && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_ROLE_RESTRICTION)) {
@@ -177,6 +200,32 @@ export async function handleJoinChannel(client, data, msgId) {
   if (oldChannel) maybeCloseRouter(oldChannelId);
   if (oldChannel) checkTemporaryChannel(oldChannelId);
   checkTemporaryChannel(channelId);
+
+  if (oldChannel && !hasChannelVisibility(client, oldChannel)) {
+    send(client.ws, 'channel:deleted', { channelId: oldChannelId });
+  }
+
+  if (channel.visibilityRoles && channel.visibilityRoles.length > 0) {
+    const channelInfo = {
+      id: channel.id,
+      name: channel.name,
+      parentId: channel.parentId,
+      hasPassword: !!channel.password,
+      maxUsers: channel.maxUsers,
+      description: channel.description,
+      isDefault: channel.isDefault,
+      sortOrder: channel.sortOrder,
+      moderated: channel.moderated,
+      type: channel.type || 'channel',
+      isTemporary: channel.isTemporary || false,
+      allowedRoles: channel.allowedRoles || [],
+      writeRoles: channel.writeRoles || [],
+      readRoles: channel.readRoles || [],
+      visibilityRoles: channel.visibilityRoles || [],
+      userCount: channel.clients.size,
+    };
+    send(client.ws, 'channel:created', { channel: channelInfo });
+  }
 
   const channelClients = state.getClientsByChannel(channelId).map(c => ({
     id: c.id,
@@ -294,6 +343,7 @@ export function handleCreateChannel(client, data, msgId) {
     allowedRoles: [],
     writeRoles: [],
     readRoles: [],
+    visibilityRoles: [],
     clients: new Set(),
     router: null,
     voiceGranted: new Set(),
@@ -321,6 +371,7 @@ export function handleCreateChannel(client, data, msgId) {
     allowedRoles: [],
     writeRoles: [],
     readRoles: [],
+    visibilityRoles: [],
     userCount: 0,
   };
 
@@ -486,6 +537,10 @@ export function handleUpdateChannel(client, data, msgId) {
     channel.readRoles = props.readRoles;
     setChannelReadRoles(channelId, props.readRoles);
   }
+  if (props.visibilityRoles !== undefined && Array.isArray(props.visibilityRoles)) {
+    channel.visibilityRoles = props.visibilityRoles;
+    setChannelVisibilityRoles(channelId, props.visibilityRoles);
+  }
 
   dbUpdateChannel(channelId, props);
 
@@ -523,10 +578,17 @@ export function handleUpdateChannel(client, data, msgId) {
     allowedRoles: channel.allowedRoles || [],
     writeRoles: channel.writeRoles || [],
     readRoles: channel.readRoles || [],
+    visibilityRoles: channel.visibilityRoles || [],
     userCount: channel.clients.size,
   };
 
-  broadcast('channel:updated', { channel: channelInfo });
+  for (const c of state.clients.values()) {
+    if (hasChannelVisibility(c, channel)) {
+      send(c.ws, 'channel:updated', { channel: channelInfo });
+    } else {
+      send(c.ws, 'channel:deleted', { channelId: channel.id });
+    }
+  }
 
   logAuditEvent('channel_update', client.userId, client.nickname, null, null, `Channel: ${channel.name}`);
 }
