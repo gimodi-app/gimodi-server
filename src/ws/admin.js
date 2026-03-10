@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import state from '../state.js';
 import { PERMISSIONS } from '../permissions.js';
-import { addBan, getAllBans, deleteBan, logAuditEvent, getAuditLog, getIdentity, getAllIdentities, getUserRoles, getUserPermissions, getUserBadge, deleteIdentity, deleteUserRoles, deleteUserDmMessages, assignRole, removeRole, isBannedByUserId } from '../db/database.js';
+import { addBan, getAllBans, deleteBan, logAuditEvent, getAuditLog, getIdentity, getAllIdentities, getUserRoles, getUserPermissions, getUserBadge, deleteIdentity, deleteUserRoles, deleteUserDmMessages, assignRole, removeRole, isBannedByUserId, getRegisteredNicknames, deleteNicknameRegistration } from '../db/database.js';
 import { send, broadcast } from './handler.js';
 
 /**
@@ -174,6 +174,7 @@ export function handleListUsers(client, data, id) {
   const users = identities.map(identity => {
     const onlineClient = onlineByUserId.get(identity.user_id);
     const roles = getUserRoles(identity.user_id);
+    const registeredNicknames = getRegisteredNicknames(identity.user_id);
     return {
       userId: identity.user_id,
       name: identity.name,
@@ -181,9 +182,10 @@ export function handleListUsers(client, data, id) {
       roles,
       online: !!onlineClient,
       clientId: onlineClient?.id || null,
-      nickname: onlineClient?.nickname || identity.name,
       channelId: onlineClient?.channelId || null,
       lastSeenAt: identity.last_seen_at || null,
+      registeredNicknames,
+      nickname: onlineClient?.nickname || registeredNicknames[0] || identity.name,
     };
   });
 
@@ -311,4 +313,33 @@ export function handleBanByUserId(client, data, id) {
   const details = duration > 0 ? `Duration: ${duration}s, Reason: ${banReason}` : `Permanent, Reason: ${banReason}`;
   logAuditEvent('ban_user', client.userId, client.nickname, userId, identity.name, details);
   send(client.ws, 'admin:ban-user-ok', { userId }, id);
+}
+
+/**
+ * Handles deleting a single registered nickname from a user identity.
+ * @param {object} client
+ * @param {object} data
+ * @param {string} [id]
+ */
+export function handleDeleteNickname(client, data, id) {
+  if (!client.permissions.has(PERMISSIONS.USER_BAN)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'Admin access required.' }, id);
+  }
+  const { userId, nickname } = data;
+  if (!userId || typeof userId !== 'string' || !nickname || typeof nickname !== 'string') {
+    return send(client.ws, 'server:error', { code: 'INVALID_REQUEST', message: 'userId and nickname are required.' }, id);
+  }
+
+  const remaining = getRegisteredNicknames(userId);
+  if (remaining.length <= 1) {
+    return send(client.ws, 'server:error', { code: 'LAST_NICKNAME', message: 'Cannot delete the last nickname. Delete the user instead.' }, id);
+  }
+
+  const deleted = deleteNicknameRegistration(userId, nickname);
+  if (!deleted) {
+    return send(client.ws, 'server:error', { code: 'NOT_FOUND', message: 'Nickname not found for this user.' }, id);
+  }
+
+  logAuditEvent('delete_nickname', client.userId, client.nickname, userId, nickname, null);
+  send(client.ws, 'admin:delete-nickname-ok', { userId, nickname }, id);
 }

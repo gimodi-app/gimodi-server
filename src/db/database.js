@@ -396,7 +396,55 @@ export function updateLastSeen(userId, timestamp) {
  * @param {string} userId
  */
 export function deleteIdentity(userId) {
+  db.prepare('DELETE FROM nickname_registrations WHERE user_id = ?').run(userId);
   db.prepare('DELETE FROM identities WHERE user_id = ?').run(userId);
+}
+
+/**
+ * Finds the user_id that owns a registered nickname (case-insensitive).
+ * @param {string} nickname
+ * @returns {string|null}
+ */
+export function getNicknameOwner(nickname) {
+  const row = db.prepare(
+    'SELECT user_id FROM nickname_registrations WHERE nickname = ? COLLATE NOCASE'
+  ).get(nickname);
+  return row ? row.user_id : null;
+}
+
+/**
+ * Registers a nickname for a user identity.
+ * @param {string} userId
+ * @param {string} nickname
+ */
+export function registerNickname(userId, nickname) {
+  db.prepare(
+    'INSERT OR IGNORE INTO nickname_registrations (user_id, nickname, registered_at) VALUES (?, ?, ?)'
+  ).run(userId, nickname, Date.now());
+}
+
+/**
+ * Returns all registered nicknames for a given user.
+ * @param {string} userId
+ * @returns {string[]}
+ */
+export function getRegisteredNicknames(userId) {
+  return db.prepare(
+    'SELECT nickname FROM nickname_registrations WHERE user_id = ?'
+  ).all(userId).map(r => r.nickname);
+}
+
+/**
+ * Deletes a single nickname registration for a user.
+ * @param {string} userId
+ * @param {string} nickname
+ * @returns {boolean}
+ */
+export function deleteNicknameRegistration(userId, nickname) {
+  const result = db.prepare(
+    'DELETE FROM nickname_registrations WHERE user_id = ? AND nickname = ? COLLATE NOCASE'
+  ).run(userId, nickname);
+  return result.changes > 0;
 }
 
 /**

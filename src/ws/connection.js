@@ -8,7 +8,7 @@ import supportedVersions from '../supportedVersions.js';
 const require = createRequire(import.meta.url);
 const { version: serverVersion } = require('../../package.json');
 import state from '../state.js';
-import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoleColor, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers } from '../db/database.js';
+import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoleColor, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers, getNicknameOwner, registerNickname } from '../db/database.js';
 import { broadcast, send } from './handler.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
@@ -96,6 +96,23 @@ export async function handleConnect(ws, data, msgId, ip) {
 
   if (state.isNicknameTaken(trimmed)) {
     return send(ws, 'server:error', { code: 'NICKNAME_TAKEN', message: 'Nickname is already in use.' }, msgId);
+  }
+
+  const nicknameOwner = getNicknameOwner(trimmed);
+  if (nicknameOwner && !userId) {
+    return send(ws, 'server:error', {
+      code: 'NICKNAME_REGISTERED',
+      message: 'This nickname is registered to an identity. Please choose a different nickname or connect with your identity.',
+    }, msgId);
+  }
+  if (nicknameOwner && nicknameOwner !== userId) {
+    return send(ws, 'server:error', {
+      code: 'NICKNAME_REGISTERED',
+      message: 'This nickname is registered to another identity. Please choose a different nickname.',
+    }, msgId);
+  }
+  if (userId && !nicknameOwner) {
+    registerNickname(userId, trimmed);
   }
 
   const clientId = randomUUID();
