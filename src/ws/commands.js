@@ -43,7 +43,7 @@ function handleClear(client, data, msgId) {
     return send(client.ws, 'server:error', { code: 'INVALID_COMMAND', message: 'channelId required.' }, msgId);
   }
 
-  if (client.channelId !== channelId) {
+  if (client.channelId !== channelId && !client.chatSubscriptions.has(channelId)) {
     return send(client.ws, 'server:error', { code: 'NOT_IN_CHANNEL', message: 'You are not in this channel.' }, msgId);
   }
 
@@ -57,9 +57,16 @@ function handleClear(client, data, msgId) {
 
   const channel = state.channels.get(channelId);
   if (channel) {
+    const notified = new Set();
     for (const peerId of channel.clients) {
       const peer = state.clients.get(peerId);
       if (peer) {
+        send(peer.ws, 'chat:cleared', { channelId });
+        notified.add(peer.id);
+      }
+    }
+    for (const peer of state.clients.values()) {
+      if (!notified.has(peer.id) && peer.chatSubscriptions.has(channelId)) {
         send(peer.ws, 'chat:cleared', { channelId });
       }
     }
