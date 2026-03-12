@@ -2,11 +2,12 @@ import state from '../state.js';
 import config from '../config.js';
 import { send } from './handler.js';
 import { PERMISSIONS } from '../permissions.js';
-import { deleteChannelMessages } from '../db/database.js';
+import { deleteChannelMessages, deleteMessagesByUser, getNicknameOwner } from '../db/database.js';
 
 /** @type {Record<string, function>} */
 const COMMANDS = {
   clear: handleClear,
+  purge: handlePurge,
 };
 
 /**
@@ -70,5 +71,55 @@ function handleClear(client, data, msgId) {
         send(peer.ws, 'chat:cleared', { channelId });
       }
     }
+  }
+}
+
+/**
+ * Purges all messages from a user across all channels.
+ * @param {object} client
+ * @param {object} data
+ * @param {string} [msgId]
+ */
+function handlePurge(client, data, msgId) {
+  let { nickname } = data;
+
+  if (!nickname || typeof nickname !== 'string') {
+    return send(client.ws, 'server:error', { code: 'INVALID_COMMAND', message: 'Usage: /purge <nickname>' }, msgId);
+  }
+
+  if (nickname.startsWith('@')) nickname = nickname.slice(1);
+
+  if (!client.permissions.has(PERMISSIONS.CHAT_SLASH_PURGE)) {
+    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You do not have permission to use /purge.' }, msgId);
+  }
+
+  let targetClientId = null;
+  let targetUserId = null;
+
+  for (const c of state.clients.values()) {
+    if (c.nickname.toLowerCase() === nickname.toLowerCase()) {
+      targetClientId = c.id;
+      targetUserId = c.userId || null;
+      break;
+    }
+  }
+
+  if (!targetClientId) {
+    const userId = getNicknameOwner(nickname);
+    if (userId) {
+      targetUserId = userId;
+    }
+  }
+
+  if (!targetClientId && !targetUserId) {
+    return send(client.ws, 'server:error', { code: 'USER_NOT_FOUND', message: `User "${nickname}" not found.` }, msgId);
+  }
+
+  if (config.chat.persistMessages) {
+    deleteMessagesByUser(targetClientId, targetUserId);
+  }
+
+  for (const peer of state.clients.values()) {
+    send(peer.ws, 'chat:purged', { clientId: targetClientId, userId: targetUserId });
   }
 }

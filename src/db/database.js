@@ -668,6 +668,38 @@ export function deleteChannelMessages(channelId) {
 }
 
 /**
+ * Deletes all messages from a user (by client_id and/or user_id) across all channels.
+ * Also removes associated reactions and pinned message entries.
+ * @param {string} clientId
+ * @param {string|null} userId
+ */
+export function deleteMessagesByUser(clientId, userId) {
+  const conditions = [];
+  const params = [];
+
+  if (clientId) {
+    conditions.push('client_id = ?');
+    params.push(clientId);
+  }
+  if (userId) {
+    conditions.push('user_id = ?');
+    params.push(userId);
+  }
+
+  if (conditions.length === 0) return;
+
+  const where = conditions.join(' OR ');
+  const subquery = `SELECT id FROM messages WHERE ${where}`;
+
+  const txn = db.transaction(() => {
+    db.prepare(`DELETE FROM reactions WHERE message_id IN (${subquery})`).run(...params);
+    db.prepare(`DELETE FROM pinned_messages WHERE message_id IN (${subquery})`).run(...params);
+    db.prepare(`DELETE FROM messages WHERE ${where}`).run(...params);
+  });
+  txn();
+}
+
+/**
  * Prunes messages in a channel keeping only the most recent maxCount.
  * @param {string} channelId
  * @param {number} maxCount
