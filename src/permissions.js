@@ -41,6 +41,7 @@ export const PERMISSIONS = {
   CHANNEL_CREATE_TEMPORARY:  'channel.create_temporary',
   FILE_BROWSE:               'file.browse',
   FILE_DELETE:               'file.delete',
+  SERVER_BYPASS_PASSWORD:    'server.bypass_password',
 };
 
 /**
@@ -145,6 +146,7 @@ export const PERMISSION_GROUPS = [
       'role.manage',
       'server.admin_menu',
       'server.manage_settings',
+      'server.bypass_password',
     ],
   },
 ];
@@ -193,4 +195,5 @@ export const PERMISSION_LABELS = {
   'channel.create_temporary':        'Create Temporary Channels',
   'file.browse':                     'Browse Channel Files',
   'file.delete':                     'Delete Any File',
+  'server.bypass_password':          'Bypass Server Password',
 };

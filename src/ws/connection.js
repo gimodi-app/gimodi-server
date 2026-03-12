@@ -9,6 +9,7 @@ import supportedVersions from '../supportedVersions.js';
 const require = createRequire(import.meta.url);
 const { version: serverVersion } = require('../../package.json');
 import state from '../state.js';
+import { PERMISSIONS } from '../permissions.js';
 import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoleColor, getUserHighestRolePosition, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers, getNicknameOwner, registerNickname } from '../db/database.js';
 import { broadcast, send } from './handler.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
@@ -49,10 +50,6 @@ export async function handleConnect(ws, data, msgId, ip) {
   const trimmed = nickname.trim();
   if (trimmed.length > 32) {
     return send(ws, 'server:error', { code: 'INVALID_NICKNAME', message: 'Nickname too long (max 32).' }, msgId);
-  }
-
-  if (config.password && password !== config.password) {
-    return send(ws, 'server:error', { code: 'BAD_PASSWORD', message: 'Incorrect server password.' }, msgId);
   }
 
   if (isBanned(ip)) {
@@ -126,6 +123,11 @@ export async function handleConnect(ws, data, msgId, ip) {
   }
 
   const permissions = userId ? getUserPermissions(userId) : new Set();
+
+  if (config.password && password !== config.password && !permissions.has(PERMISSIONS.SERVER_BYPASS_PASSWORD)) {
+    return send(ws, 'server:error', { code: 'BAD_PASSWORD', message: 'Incorrect server password.' }, msgId);
+  }
+
   const badge = userId ? getUserBadge(userId) : null;
   const roleColor = userId ? getUserRoleColor(userId) : null;
   const rolePosition = userId ? getUserHighestRolePosition(userId) : Infinity;
