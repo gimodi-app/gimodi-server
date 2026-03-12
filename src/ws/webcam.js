@@ -1,4 +1,5 @@
 import state from '../state.js';
+import { PERMISSIONS } from '../permissions.js';
 import { send } from './handler.js';
 import logger from '../logger.js';
 
@@ -11,6 +12,10 @@ export function handleWebcamStart(client, data, id) {
   logger.info(`[voice] ${client.nickname}: webcam started`);
   const channel = state.channels.get(client.channelId);
   if (!channel) return;
+
+  if (channel.moderated && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_MODERATION) && !channel.voiceGranted.has(client.id)) {
+    return send(client.ws, 'server:error', { code: 'MODERATED', message: 'This channel is moderated. You need voice permission to use your webcam.' }, id);
+  }
 
   for (const peerId of channel.clients) {
     if (peerId === client.id) continue;

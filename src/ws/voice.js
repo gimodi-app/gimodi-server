@@ -107,11 +107,10 @@ export async function handleProduce(client, data, id) {
   const { transportId, kind, rtpParameters, appData } = data;
   logger.info(`[voice] ${client.nickname}: produce kind=${kind} appData=${JSON.stringify(appData || {})}`);
 
-  if (kind === 'audio' && !(appData?.screen)) {
-    const channel = state.channels.get(client.channelId);
-    if (channel && channel.moderated && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_MODERATION) && !channel.voiceGranted.has(client.id)) {
-      return send(client.ws, 'server:error', { code: 'MODERATED', message: 'This channel is moderated. You need voice permission to speak.' }, id);
-    }
+  const channel = state.channels.get(client.channelId);
+  if (channel && channel.moderated && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_MODERATION) && !channel.voiceGranted.has(client.id)) {
+    const mediaType = appData?.screen ? 'share your screen' : appData?.webcam ? 'use your webcam' : 'speak';
+    return send(client.ws, 'server:error', { code: 'MODERATED', message: `This channel is moderated. You need voice permission to ${mediaType}.` }, id);
   }
 
   if (!client.sendTransport || client.sendTransport.id !== transportId) {
