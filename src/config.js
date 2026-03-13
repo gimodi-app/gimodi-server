@@ -89,7 +89,9 @@ function setNestedValue(obj, path, value) {
  * @returns {*}
  */
 function parseEnvValue(raw, type) {
-  if (raw === '' || raw === 'null') return null;
+  if (raw === '' || raw === 'null') {
+    return null;
+  }
   switch (type) {
     case 'number':
       return Number(raw);

@@ -167,10 +167,14 @@ export function handleMuteState(client, data, _id) {
   client.deafened = !!deafened;
 
   const channel = state.channels.get(client.channelId);
-  if (!channel) return;
+  if (!channel) {
+    return;
+  }
 
   for (const peerId of channel.clients) {
-    if (peerId === client.id) continue;
+    if (peerId === client.id) {
+      continue;
+    }
     const peer = state.clients.get(peerId);
     if (peer) {
       send(peer.ws, 'voice:mute-state-changed', {

@@ -30,7 +30,9 @@ function charsetFromContentType(ct) {
  */
 function charsetFromHtml(latin1Html) {
   const m1 = latin1Html.match(/<meta[^>]+charset=["']?([^"';\s>]+)/i);
-  if (m1) return m1[1].trim();
+  if (m1) {
+    return m1[1].trim();
+  }
   return null;
 }
 
@@ -46,7 +48,9 @@ function decodeBuffer(buf, contentTypeHeader) {
     charset = charsetFromHtml(buf.toString('latin1'));
   }
   const normalized = (charset || 'utf-8').toLowerCase().replace(/^utf8$/, 'utf-8');
-  if (normalized === 'utf-8') return buf.toString('utf-8');
+  if (normalized === 'utf-8') {
+    return buf.toString('utf-8');
+  }
   try {
     return new TextDecoder(normalized).decode(buf);
   } catch {
@@ -70,28 +74,54 @@ function isPublicUrl(url) {
 
   const hostname = parsed.hostname.toLowerCase();
 
-  if (hostname === 'localhost' || !hostname.includes('.')) return false;
+  if (hostname === 'localhost' || !hostname.includes('.')) {
+    return false;
+  }
 
   const v4 = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
   if (v4) {
     const [a, b] = [Number(v4[1]), Number(v4[2])];
-    if (a === 0) return false;
-    if (a === 10) return false;
-    if (a === 127) return false;
-    if (a === 169 && b === 254) return false;
-    if (a === 172 && b >= 16 && b <= 31) return false;
-    if (a === 192 && b === 168) return false;
-    if (a === 198 && (b === 18 || b === 19)) return false;
-    if (a === 100 && b >= 64 && b <= 127) return false;
-    if (a >= 224) return false;
+    if (a === 0) {
+      return false;
+    }
+    if (a === 10) {
+      return false;
+    }
+    if (a === 127) {
+      return false;
+    }
+    if (a === 169 && b === 254) {
+      return false;
+    }
+    if (a === 172 && b >= 16 && b <= 31) {
+      return false;
+    }
+    if (a === 192 && b === 168) {
+      return false;
+    }
+    if (a === 198 && (b === 18 || b === 19)) {
+      return false;
+    }
+    if (a === 100 && b >= 64 && b <= 127) {
+      return false;
+    }
+    if (a >= 224) {
+      return false;
+    }
     return true;
   }
 
   const v6 = hostname.startsWith('[') ? hostname.slice(1, -1) : hostname;
   if (v6.includes(':')) {
-    if (v6 === '::' || v6 === '::1') return false;
-    if (/^fe[89ab]/i.test(v6)) return false;
-    if (/^f[cd]/i.test(v6)) return false;
+    if (v6 === '::' || v6 === '::1') {
+      return false;
+    }
+    if (/^fe[89ab]/i.test(v6)) {
+      return false;
+    }
+    if (/^f[cd]/i.test(v6)) {
+      return false;
+    }
     return true;
   }
 
@@ -104,7 +134,9 @@ function isPublicUrl(url) {
  * @returns {Promise<{url: string, title: string, description: string, image: string|null, siteName: string}|null>}
  */
 async function fetchPreview(url) {
-  if (!isPublicUrl(url)) return null;
+  if (!isPublicUrl(url)) {
+    return null;
+  }
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
@@ -121,17 +153,23 @@ async function fetchPreview(url) {
     clearTimeout(timeout);
 
     const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('text/html')) return null;
+    if (!contentType.includes('text/html')) {
+      return null;
+    }
 
     const reader = res.body.getReader();
     const chunks = [];
     let totalSize = 0;
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
       chunks.push(value);
       totalSize += value.length;
-      if (totalSize > MAX_HTML_SIZE) break;
+      if (totalSize > MAX_HTML_SIZE) {
+        break;
+      }
     }
     reader.cancel();
 
@@ -164,7 +202,9 @@ function parseOgTags(html, url) {
   const image = getMeta('image');
   const siteName = getMeta('site_name');
 
-  if (!title && !description && !image) return null;
+  if (!title && !description && !image) {
+    return null;
+  }
 
   let imageUrl = image;
   if (image && !image.startsWith('http')) {
@@ -220,7 +260,9 @@ function decodeEntities(str) {
  */
 export async function fetchLinkPreviews(text) {
   const urls = extractUrls(text);
-  if (urls.length === 0) return [];
+  if (urls.length === 0) {
+    return [];
+  }
 
   const limited = urls.slice(0, 3);
   const results = await Promise.all(limited.map(fetchPreview));

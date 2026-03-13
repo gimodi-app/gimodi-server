@@ -189,8 +189,12 @@ export async function handleConnect(ws, data, msgId, ip) {
   const voiceRequestClients = [];
   for (const channel of state.channels.values()) {
     if (channel.moderated) {
-      for (const cid of channel.voiceGranted) voiceGrantedClients.push(cid);
-      for (const cid of channel.voiceRequests) voiceRequestClients.push(cid);
+      for (const cid of channel.voiceGranted) {
+        voiceGrantedClients.push(cid);
+      }
+      for (const cid of channel.voiceRequests) {
+        voiceRequestClients.push(cid);
+      }
     }
   }
 
@@ -246,17 +250,23 @@ export async function handleConnect(ws, data, msgId, ip) {
  */
 export function handleDisconnect(ws) {
   const clientId = ws._clientId;
-  if (!clientId) return;
+  if (!clientId) {
+    return;
+  }
 
   const client = state.clients.get(clientId);
-  if (!client) return;
+  if (!client) {
+    return;
+  }
 
   const { channelId, nickname } = client;
 
   const channel = state.channels.get(channelId);
   if (channel) {
     for (const id of channel.clients) {
-      if (id === clientId) continue;
+      if (id === clientId) {
+        continue;
+      }
       const peer = state.clients.get(id);
       if (peer) {
         send(peer.ws, 'channel:user-left', { channelId, clientId });
@@ -272,9 +282,13 @@ export function handleDisconnect(ws) {
 
   cleanupClientMedia(client);
   state.removeClient(clientId);
-  if (channel) maybeCloseRouter(channelId);
+  if (channel) {
+    maybeCloseRouter(channelId);
+  }
 
-  if (channel) checkTemporaryChannel(channelId);
+  if (channel) {
+    checkTemporaryChannel(channelId);
+  }
 
   broadcast('server:client-left', { clientId }, clientId);
 

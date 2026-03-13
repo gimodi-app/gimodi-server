@@ -22,4 +22,10 @@ export default [
     },
   },
   eslintConfigPrettier,
+  {
+    files: ['src/**/*.js'],
+    rules: {
+      curly: 'error',
+    },
+  },
 ];

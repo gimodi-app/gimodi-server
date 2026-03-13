@@ -75,7 +75,9 @@ function ensureDefaultRole(userId) {
  * @returns {number}
  */
 function getActorPosition(client) {
-  if (!client.userId) return Infinity;
+  if (!client.userId) {
+    return Infinity;
+  }
   return getUserHighestRolePosition(client.userId);
 }
 
@@ -85,7 +87,9 @@ function getActorPosition(client) {
  * @returns {number}
  */
 function getTargetPosition(userId) {
-  if (!userId) return Infinity;
+  if (!userId) {
+    return Infinity;
+  }
   return getUserHighestRolePosition(userId);
 }
 
@@ -97,7 +101,9 @@ function getTargetPosition(userId) {
  */
 function actorOutranksTarget(actor, targetUserId) {
   const actorPos = getActorPosition(actor);
-  if (actorPos === 0) return true;
+  if (actorPos === 0) {
+    return true;
+  }
   const targetPos = getTargetPosition(targetUserId);
   return actorPos < targetPos;
 }
@@ -111,7 +117,9 @@ function actorOutranksTarget(actor, targetUserId) {
  */
 function actorCanManageRole(actor, roleId) {
   const actorPos = getActorPosition(actor);
-  if (actorPos === 0) return true;
+  if (actorPos === 0) {
+    return true;
+  }
   const rolePos = getRolePosition(roleId);
   return actorPos < rolePos;
 }
@@ -162,7 +170,9 @@ export function handleAssignRole(client, data, id) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot modify roles for a user with equal or higher rank.' }, id);
   }
   const existing = getUserRoles(target.userId);
-  for (const r of existing) removeRole(target.userId, r.id);
+  for (const r of existing) {
+    removeRole(target.userId, r.id);
+  }
   assignRole(target.userId, roleId);
   target.permissions = getUserPermissions(target.userId);
   target.badge = getUserBadge(target.userId);
@@ -233,7 +243,9 @@ export function handleAssignRoleByUserId(client, data, id) {
   }
 
   const existing = getUserRoles(userId);
-  for (const r of existing) removeRole(userId, r.id);
+  for (const r of existing) {
+    removeRole(userId, r.id);
+  }
   assignRole(userId, roleId);
   refreshOnlineUserPermissions(userId);
 
@@ -385,7 +397,9 @@ export function handleRoleUpdate(client, data, id) {
   const affectedUserIds = getRoleMembers(roleId).map((m) => m.user_id);
 
   for (const c of state.clients.values()) {
-    if (!c.userId) continue;
+    if (!c.userId) {
+      continue;
+    }
     const userRoles = getUserRoles(c.userId);
     if (userRoles.some((r) => r.id === roleId)) {
       c.badge = getUserBadge(c.userId);
@@ -417,8 +431,12 @@ export function handleRoleDelete(client, data, id) {
   }
   const affected = [];
   for (const c of state.clients.values()) {
-    if (!c.userId) continue;
-    if (getUserRoles(c.userId).some((r) => r.id === roleId)) affected.push(c);
+    if (!c.userId) {
+      continue;
+    }
+    if (getUserRoles(c.userId).some((r) => r.id === roleId)) {
+      affected.push(c);
+    }
   }
   deleteRole(roleId);
   for (const c of affected) {
@@ -458,7 +476,9 @@ export function handleRoleSetPermissions(client, data, id) {
   }
   setRolePermissions(roleId, permissions);
   for (const c of state.clients.values()) {
-    if (!c.userId) continue;
+    if (!c.userId) {
+      continue;
+    }
     const userRoles = getUserRoles(c.userId);
     if (userRoles.some((r) => r.id === roleId)) {
       c.permissions = getUserPermissions(c.userId);

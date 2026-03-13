@@ -158,13 +158,18 @@ export function initWebSocket(server) {
 
     let closed = false;
     const onClose = () => {
-      if (closed) return;
+      if (closed) {
+        return;
+      }
       closed = true;
       clearTimeout(heartbeatTimer);
       if (maxPerIp > 0) {
         const count = (ipConnectionCounts.get(ip) || 1) - 1;
-        if (count <= 0) ipConnectionCounts.delete(ip);
-        else ipConnectionCounts.set(ip, count);
+        if (count <= 0) {
+          ipConnectionCounts.delete(ip);
+        } else {
+          ipConnectionCounts.set(ip, count);
+        }
       }
       handleDisconnect(ws);
     };
@@ -389,7 +394,9 @@ export function send(ws, type, data, id) {
  * @param {string} reason - Shutdown reason sent to clients
  */
 export function closeWebSocket(reason) {
-  if (!wss) return;
+  if (!wss) {
+    return;
+  }
   for (const client of state.clients.values()) {
     send(client.ws, 'server:shutdown', { reason });
     client.ws.close();
@@ -405,7 +412,9 @@ export function closeWebSocket(reason) {
  */
 export function broadcast(type, data, excludeClientId) {
   for (const client of state.clients.values()) {
-    if (client.id === excludeClientId) continue;
+    if (client.id === excludeClientId) {
+      continue;
+    }
     send(client.ws, type, data);
   }
 }

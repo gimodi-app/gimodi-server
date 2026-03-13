@@ -51,11 +51,19 @@ import { PERMISSIONS } from '../permissions.js';
 function hasChannelReadAccess(client, channel) {
   if (channel.parentId) {
     const parent = state.channels.get(channel.parentId);
-    if (parent && !hasChannelReadAccess(client, parent)) return false;
+    if (parent && !hasChannelReadAccess(client, parent)) {
+      return false;
+    }
   }
-  if (!channel.readRoles || channel.readRoles.length === 0) return true;
-  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) return true;
-  if (!client.userId) return false;
+  if (!channel.readRoles || channel.readRoles.length === 0) {
+    return true;
+  }
+  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) {
+    return true;
+  }
+  if (!client.userId) {
+    return false;
+  }
   const userRoles = getUserRoles(client.userId);
   return userRoles.some((r) => channel.readRoles.includes(r.id));
 }
@@ -69,11 +77,19 @@ function hasChannelReadAccess(client, channel) {
 function hasChannelWriteAccess(client, channel) {
   if (channel.parentId) {
     const parent = state.channels.get(channel.parentId);
-    if (parent && !hasChannelWriteAccess(client, parent)) return false;
+    if (parent && !hasChannelWriteAccess(client, parent)) {
+      return false;
+    }
   }
-  if (!channel.writeRoles || channel.writeRoles.length === 0) return true;
-  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) return true;
-  if (!client.userId) return false;
+  if (!channel.writeRoles || channel.writeRoles.length === 0) {
+    return true;
+  }
+  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) {
+    return true;
+  }
+  if (!client.userId) {
+    return false;
+  }
   const userRoles = getUserRoles(client.userId);
   return userRoles.some((r) => channel.writeRoles.includes(r.id));
 }
@@ -86,10 +102,14 @@ function hasChannelWriteAccess(client, channel) {
  * @returns {null|{code: string, message: string}} Null if access granted, error object if denied.
  */
 function checkChannelChatAccess(client, channelId, password) {
-  if (client.channelId === channelId) return null;
+  if (client.channelId === channelId) {
+    return null;
+  }
 
   const channel = state.channels.get(channelId);
-  if (!channel) return { code: 'UNKNOWN_CHANNEL', message: 'Channel not found.' };
+  if (!channel) {
+    return { code: 'UNKNOWN_CHANNEL', message: 'Channel not found.' };
+  }
 
   if (channel.password && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_PASSWORD)) {
     if (password !== channel.password) {
@@ -126,7 +146,9 @@ function notifyChannelAndSubscribers(channel, channelId, eventType, payload) {
   const notified = new Set(channel.clients);
   for (const peerId of notified) {
     const peer = state.clients.get(peerId);
-    if (peer) send(peer.ws, eventType, payload);
+    if (peer) {
+      send(peer.ws, eventType, payload);
+    }
   }
   for (const peer of state.clients.values()) {
     if (!notified.has(peer.id) && peer.chatSubscriptions.has(channelId)) {
@@ -157,7 +179,9 @@ export function handleChatSend(client, data, msgId) {
   }
 
   const channel = state.channels.get(channelId);
-  if (!channel) return;
+  if (!channel) {
+    return;
+  }
 
   if (channel.writeRoles && channel.writeRoles.length > 0 && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) {
     let hasRole = false;
@@ -180,11 +204,15 @@ export function handleChatSend(client, data, msgId) {
       replyToContent = repliedMsg.content || null;
       if (repliedMsg.user_id) {
         const identity = getIdentity(repliedMsg.user_id);
-        if (identity) replyToNickname = identity.name;
+        if (identity) {
+          replyToNickname = identity.name;
+        }
       }
       if (!replyToNickname && repliedMsg.client_id) {
         const replyAuthor = state.clients.get(repliedMsg.client_id);
-        if (replyAuthor) replyToNickname = replyAuthor.nickname;
+        if (replyAuthor) {
+          replyToNickname = replyAuthor.nickname;
+        }
       }
     }
   }
@@ -241,7 +269,9 @@ export function handleChatSend(client, data, msgId) {
   const notified = new Set(channel.clients);
   for (const peerId of notified) {
     const peer = state.clients.get(peerId);
-    if (peer && hasChannelReadAccess(peer, channel)) send(peer.ws, 'chat:receive', msgPayload);
+    if (peer && hasChannelReadAccess(peer, channel)) {
+      send(peer.ws, 'chat:receive', msgPayload);
+    }
   }
   for (const peer of state.clients.values()) {
     if (!notified.has(peer.id) && peer.chatSubscriptions.has(channelId) && hasChannelReadAccess(peer, channel)) {
@@ -251,19 +281,25 @@ export function handleChatSend(client, data, msgId) {
 
   fetchLinkPreviews(message.content)
     .then((previews) => {
-      if (previews.length === 0) return;
+      if (previews.length === 0) {
+        return;
+      }
 
       if (config.chat.persistMessages) {
         updateMessagePreviews(message.id, previews);
       }
 
       const ch = state.channels.get(channelId);
-      if (!ch) return;
+      if (!ch) {
+        return;
+      }
 
       const notifiedPrev = new Set(ch.clients);
       for (const peerId of notifiedPrev) {
         const peer = state.clients.get(peerId);
-        if (peer && hasChannelReadAccess(peer, ch)) send(peer.ws, 'chat:link-preview', { messageId: message.id, channelId, previews });
+        if (peer && hasChannelReadAccess(peer, ch)) {
+          send(peer.ws, 'chat:link-preview', { messageId: message.id, channelId, previews });
+        }
       }
       for (const peer of state.clients.values()) {
         if (!notifiedPrev.has(peer.id) && peer.chatSubscriptions.has(channelId) && hasChannelReadAccess(peer, ch)) {
@@ -451,7 +487,9 @@ export function handleChatContext(client, data, msgId) {
   }
 
   const accessError = checkChannelChatAccess(client, channelId, password);
-  if (accessError) return send(client.ws, 'server:error', accessError, msgId);
+  if (accessError) {
+    return send(client.ws, 'server:error', accessError, msgId);
+  }
 
   const rows = getMessagesAround(channelId, timestamp, 25);
 
@@ -626,11 +664,15 @@ export function handleChatDelete(client, data, msgId) {
         const uploadsDir = resolve(config.files.storagePath);
         try {
           rmSync(join(uploadsDir, parsed.fileId), { recursive: true, force: true });
-        } catch { /* file cleanup is best-effort */ }
+        } catch {
+          /* file cleanup is best-effort */
+        }
         deleteFile(parsed.fileId);
       }
     }
-  } catch { /* content may not be JSON */ }
+  } catch {
+    /* content may not be JSON */
+  }
 
   deleteMessage(messageId);
 
@@ -756,17 +798,25 @@ export function handleChatEdit(client, data, msgId) {
 export function handleTypingIndicator(client, data, _msgId) {
   const { channelId } = data;
 
-  if (!channelId) return;
-  if (client.channelId !== channelId && !client.chatSubscriptions.has(channelId)) return;
+  if (!channelId) {
+    return;
+  }
+  if (client.channelId !== channelId && !client.chatSubscriptions.has(channelId)) {
+    return;
+  }
 
   const channel = state.channels.get(channelId);
-  if (!channel) return;
+  if (!channel) {
+    return;
+  }
 
   const typingPayload = { clientId: client.id, nickname: client.nickname, channelId };
   const notified = new Set();
 
   for (const peerId of channel.clients) {
-    if (peerId === client.id) continue;
+    if (peerId === client.id) {
+      continue;
+    }
     const peer = state.clients.get(peerId);
     if (peer) {
       send(peer.ws, 'chat:typing', typingPayload);
@@ -895,7 +945,9 @@ export function handleUnreact(client, data, msgId) {
  */
 function broadcastReactionUpdate(msg, messageId) {
   const channel = state.channels.get(msg.channel_id);
-  if (!channel) return;
+  if (!channel) {
+    return;
+  }
 
   const rawReactions = getReactions(messageId);
   const notified = new Set();
@@ -923,11 +975,15 @@ function broadcastReactionUpdate(msg, messageId) {
  */
 export function handleChatSubscribe(client, data, msgId) {
   const { channelId, password } = data;
-  if (!channelId || !state.channels.has(channelId)) return;
+  if (!channelId || !state.channels.has(channelId)) {
+    return;
+  }
 
   const accessError = checkChannelChatAccess(client, channelId, password);
   if (accessError) {
-    if (msgId) send(client.ws, 'server:error', accessError, msgId);
+    if (msgId) {
+      send(client.ws, 'server:error', accessError, msgId);
+    }
     return;
   }
 
@@ -935,8 +991,12 @@ export function handleChatSubscribe(client, data, msgId) {
 
   const channel = state.channels.get(channelId);
   const response = { channelId };
-  if (!hasChannelReadAccess(client, channel)) response.readRestricted = true;
-  if (!hasChannelWriteAccess(client, channel)) response.writeRestricted = true;
+  if (!hasChannelReadAccess(client, channel)) {
+    response.readRestricted = true;
+  }
+  if (!hasChannelWriteAccess(client, channel)) {
+    response.writeRestricted = true;
+  }
   send(client.ws, 'chat:subscribed', response, msgId);
 }
 
@@ -947,7 +1007,9 @@ export function handleChatSubscribe(client, data, msgId) {
  */
 export function handleChatUnsubscribe(client, data) {
   const { channelId } = data;
-  if (!channelId) return;
+  if (!channelId) {
+    return;
+  }
   client.chatSubscriptions.delete(channelId);
 }
 
@@ -966,7 +1028,9 @@ function aggregateReactions(rows, currentUserId) {
     const entry = map.get(r.emoji);
     entry.count++;
     entry.userIds.push(r.user_id);
-    if (r.user_id === currentUserId) entry.currentUser = true;
+    if (r.user_id === currentUserId) {
+      entry.currentUser = true;
+    }
   }
   return Array.from(map.values());
 }
@@ -1104,7 +1168,9 @@ export function handleFileDelete(client, data, msgId) {
     if (channel) {
       for (const peerId of channel.clients) {
         const peer = state.clients.get(peerId);
-        if (peer) send(peer.ws, 'chat:deleted', { messageId: msg.id, channelId: msg.channel_id });
+        if (peer) {
+          send(peer.ws, 'chat:deleted', { messageId: msg.id, channelId: msg.channel_id });
+        }
       }
       for (const peer of state.clients.values()) {
         if (!channel.clients.has(peer.id) && peer.chatSubscriptions.has(msg.channel_id)) {
@@ -1117,7 +1183,9 @@ export function handleFileDelete(client, data, msgId) {
   const uploadsDir = resolve(config.files.storagePath);
   try {
     rmSync(join(uploadsDir, fileId), { recursive: true, force: true });
-  } catch { /* file cleanup is best-effort */ }
+  } catch {
+    /* file cleanup is best-effort */
+  }
 
   deleteFile(fileId);
 

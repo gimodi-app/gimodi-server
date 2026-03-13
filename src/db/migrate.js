@@ -34,7 +34,9 @@ export function runMigrations() {
   );
 
   for (const [name, migrate] of MIGRATIONS) {
-    if (executed.has(name)) continue;
+    if (executed.has(name)) {
+      continue;
+    }
 
     logger.info(`Running migration: ${name}`);
     try {

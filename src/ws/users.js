@@ -69,16 +69,22 @@ export function handleGetNicknames(client, data, id) {
   const nicknames = {};
   const onlineByUserId = new Map();
   for (const c of state.clients.values()) {
-    if (c.userId) onlineByUserId.set(c.userId, c.nickname);
+    if (c.userId) {
+      onlineByUserId.set(c.userId, c.nickname);
+    }
   }
 
   for (const userId of userIds) {
-    if (typeof userId !== 'string') continue;
+    if (typeof userId !== 'string') {
+      continue;
+    }
     if (onlineByUserId.has(userId)) {
       nicknames[userId] = onlineByUserId.get(userId);
     } else {
       const name = getNicknameByUserId(userId);
-      if (name) nicknames[userId] = name;
+      if (name) {
+        nicknames[userId] = name;
+      }
     }
   }
 

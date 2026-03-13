@@ -47,7 +47,9 @@ async function main() {
   state.loadChannelsFromDb();
 
   for (const ch of state.channels.values()) {
-    if (ch.isTemporary) checkTemporaryChannel(ch.id);
+    if (ch.isTemporary) {
+      checkTemporaryChannel(ch.id);
+    }
   }
 
   await initWorkers();

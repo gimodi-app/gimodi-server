@@ -1,11 +1,4 @@
-import {
-  getAllChannels,
-  getAllChannelAllowedRoles,
-  getAllChannelWriteRoles,
-  getAllChannelReadRoles,
-  getAllChannelVisibilityRoles,
-  getLastMessageTimestamps,
-} from './db/database.js';
+import { getAllChannels, getAllChannelAllowedRoles, getAllChannelWriteRoles, getAllChannelReadRoles, getAllChannelVisibilityRoles, getLastMessageTimestamps } from './db/database.js';
 import config from './config.js';
 import logger from './logger.js';
 
@@ -107,9 +100,13 @@ class ServerState {
    * @returns {string|null}
    */
   getDefaultChannelId() {
-    if (config.defaultChannelId && this.channels.has(config.defaultChannelId)) return config.defaultChannelId;
+    if (config.defaultChannelId && this.channels.has(config.defaultChannelId)) {
+      return config.defaultChannelId;
+    }
     for (const ch of this.channels.values()) {
-      if (ch.isDefault) return ch.id;
+      if (ch.isDefault) {
+        return ch.id;
+      }
     }
     const first = this.channels.values().next().value;
     return first?.id ?? null;
@@ -130,7 +127,9 @@ class ServerState {
    */
   removeClient(clientId) {
     const client = this.clients.get(clientId);
-    if (!client) return null;
+    if (!client) {
+      return null;
+    }
 
     const channel = this.channels.get(client.channelId);
     if (channel) {
@@ -151,7 +150,9 @@ class ServerState {
    */
   moveClientToChannel(clientId, channelId) {
     const client = this.clients.get(clientId);
-    if (!client) return false;
+    if (!client) {
+      return false;
+    }
 
     const oldChannel = this.channels.get(client.channelId);
     if (oldChannel) {
@@ -161,7 +162,9 @@ class ServerState {
     }
 
     const newChannel = this.channels.get(channelId);
-    if (!newChannel) return false;
+    if (!newChannel) {
+      return false;
+    }
 
     newChannel.clients.add(clientId);
     client.channelId = channelId;
@@ -175,7 +178,9 @@ class ServerState {
    */
   isNicknameTaken(nickname) {
     for (const client of this.clients.values()) {
-      if (client.nickname.toLowerCase() === nickname.toLowerCase()) return true;
+      if (client.nickname.toLowerCase() === nickname.toLowerCase()) {
+        return true;
+      }
     }
     return false;
   }
@@ -187,7 +192,9 @@ class ServerState {
    */
   getClientsByChannel(channelId) {
     const channel = this.channels.get(channelId);
-    if (!channel) return [];
+    if (!channel) {
+      return [];
+    }
     return [...channel.clients].map((id) => this.clients.get(id)).filter(Boolean);
   }
 

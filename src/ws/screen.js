@@ -11,14 +11,18 @@ import logger from '../logger.js';
 export function handleScreenStart(client, data, id) {
   logger.info(`[voice] ${client.nickname}: screen share started`);
   const channel = state.channels.get(client.channelId);
-  if (!channel) return;
+  if (!channel) {
+    return;
+  }
 
   if (channel.moderated && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_MODERATION) && !channel.voiceGranted.has(client.id)) {
     return send(client.ws, 'server:error', { code: 'MODERATED', message: 'This channel is moderated. You need voice permission to share your screen.' }, id);
   }
 
   for (const peerId of channel.clients) {
-    if (peerId === client.id) continue;
+    if (peerId === client.id) {
+      continue;
+    }
     const peer = state.clients.get(peerId);
     if (peer) {
       send(peer.ws, 'screen:started', {
@@ -47,10 +51,14 @@ export function handleScreenStop(client, data, id) {
   }
 
   const channel = state.channels.get(client.channelId);
-  if (!channel) return;
+  if (!channel) {
+    return;
+  }
 
   for (const peerId of channel.clients) {
-    if (peerId === client.id) continue;
+    if (peerId === client.id) {
+      continue;
+    }
     const peer = state.clients.get(peerId);
     if (peer) {
       send(peer.ws, 'screen:stopped', { clientId: client.id });

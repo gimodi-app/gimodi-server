@@ -9,7 +9,9 @@ import logger from '../logger.js';
  */
 export async function ensureRouter(channelId) {
   const channel = state.channels.get(channelId);
-  if (!channel) return null;
+  if (!channel) {
+    return null;
+  }
   if (!channel.router) {
     channel.router = await createRouter();
     logger.info(`[media] Created Router for channel "${channel.name}" (${channelId})`);
@@ -23,7 +25,9 @@ export async function ensureRouter(channelId) {
  */
 export function maybeCloseRouter(channelId) {
   const channel = state.channels.get(channelId);
-  if (!channel || !channel.router) return;
+  if (!channel || !channel.router) {
+    return;
+  }
   if (channel.clients.size === 0) {
     channel.router.close();
     channel.router = null;
@@ -176,7 +180,9 @@ export async function consumeExistingProducers(newClient) {
 
   for (const clientId of peers) {
     const peer = state.clients.get(clientId);
-    if (!peer || !peer.producers) continue;
+    if (!peer || !peer.producers) {
+      continue;
+    }
 
     logger.info(`[media]   peer ${peer.nickname}: ${peer.producers.size} producer(s)`);
 
@@ -184,8 +190,12 @@ export async function consumeExistingProducers(newClient) {
     let hasWebcam = false;
 
     for (const producer of peer.producers.values()) {
-      if (producer.appData?.screen) hasScreen = true;
-      if (producer.appData?.webcam) hasWebcam = true;
+      if (producer.appData?.screen) {
+        hasScreen = true;
+      }
+      if (producer.appData?.webcam) {
+        hasWebcam = true;
+      }
 
       if (!channel.router.canConsume({ producerId: producer.id, rtpCapabilities: newClient.rtpCapabilities })) {
         logger.info(`[media]   skip producer ${producer.id}: canConsume=false`);

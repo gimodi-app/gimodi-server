@@ -21,13 +21,19 @@ function ipToInt(ip) {
  */
 export function isIpInCidr(ip, cidr) {
   const normalized = ip.replace(/^::ffff:/, '');
-  if (isIP(normalized) !== 4) return cidr === '::/0';
+  if (isIP(normalized) !== 4) {
+    return cidr === '::/0';
+  }
 
   const [network, prefixStr] = cidr.split('/');
-  if (isIP(network) !== 4) return false;
+  if (isIP(network) !== 4) {
+    return false;
+  }
 
   const prefix = parseInt(prefixStr, 10);
-  if (prefix === 0) return true;
+  if (prefix === 0) {
+    return true;
+  }
 
   const mask = (~0 << (32 - prefix)) >>> 0;
   return (ipToInt(normalized) & mask) === (ipToInt(network) & mask);
@@ -70,20 +76,32 @@ export function collectMetrics() {
   let clientsInVoice = 0;
 
   for (const channel of state.channels.values()) {
-    if (channel.clients.size > 0) activeChannels++;
-    if (channel.router) voiceRooms++;
+    if (channel.clients.size > 0) {
+      activeChannels++;
+    }
+    if (channel.router) {
+      voiceRooms++;
+    }
   }
 
   for (const client of state.clients.values()) {
-    if (client.sendTransport) clientsInVoice++;
+    if (client.sendTransport) {
+      clientsInVoice++;
+    }
     if (client.producers) {
       for (const producer of client.producers.values()) {
         totalProducers++;
-        if (producer.appData?.screen || producer.appData?.screenAudio) screenShares++;
-        if (producer.appData?.webcam) webcamStreams++;
+        if (producer.appData?.screen || producer.appData?.screenAudio) {
+          screenShares++;
+        }
+        if (producer.appData?.webcam) {
+          webcamStreams++;
+        }
       }
     }
-    if (client.consumers) totalConsumers += client.consumers.size;
+    if (client.consumers) {
+      totalConsumers += client.consumers.size;
+    }
   }
 
   const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);

@@ -49,7 +49,9 @@ export function handleTokenRedeem(client, data, id) {
     return send(client.ws, 'server:error', { code: 'INVALID_ROLE', message: `Role "${targetRole}" no longer exists.` }, id);
   }
   const existing = getUserRoles(client.userId);
-  for (const r of existing) removeRole(client.userId, r.id);
+  for (const r of existing) {
+    removeRole(client.userId, r.id);
+  }
   assignRole(client.userId, targetRole);
   client.permissions = getUserPermissions(client.userId);
   client.badge = getUserBadge(client.userId);

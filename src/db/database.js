@@ -72,11 +72,15 @@ try {
 try {
   db.prepare('SELECT nickname FROM messages LIMIT 0').get();
   db.exec('ALTER TABLE messages DROP COLUMN nickname');
-} catch { /* column already removed */ }
+} catch {
+  /* column already removed */
+}
 try {
   db.prepare('SELECT from_nickname FROM dm_messages LIMIT 0').get();
   db.exec('ALTER TABLE dm_messages DROP COLUMN from_nickname');
-} catch { /* column already removed */ }
+} catch {
+  /* column already removed */
+}
 try {
   db.prepare('SELECT moderated FROM channels LIMIT 0').get();
 } catch {
@@ -293,7 +297,9 @@ export function updateChannel(id, props) {
     sets.push('is_default = @isDefault');
     params.isDefault = props.isDefault ? 1 : 0;
   }
-  if (sets.length === 0) return;
+  if (sets.length === 0) {
+    return;
+  }
   db.prepare(`UPDATE channels SET ${sets.join(', ')} WHERE id = @id`).run(params);
 }
 
@@ -356,7 +362,9 @@ export function addBan(ban) {
  * @returns {boolean}
  */
 export function isBannedByUserId(userId) {
-  if (!userId) return false;
+  if (!userId) {
+    return false;
+  }
   const now = Date.now();
   return !!db.prepare('SELECT 1 FROM bans WHERE user_id = ? AND (expires_at IS NULL OR expires_at > ?)').get(userId, now);
 }
@@ -680,7 +688,9 @@ export function searchMessages(channelId, query, { limit = 50 } = {}) {
 export function getLastMessageTimestamps() {
   const rows = db.prepare(`SELECT channel_id, MAX(created_at) AS last_message_at FROM messages GROUP BY channel_id`).all();
   const map = new Map();
-  for (const row of rows) map.set(row.channel_id, row.last_message_at);
+  for (const row of rows) {
+    map.set(row.channel_id, row.last_message_at);
+  }
   return map;
 }
 
@@ -755,7 +765,9 @@ export function deleteMessagesByUser(clientId, userId) {
     params.push(userId);
   }
 
-  if (conditions.length === 0) return;
+  if (conditions.length === 0) {
+    return;
+  }
 
   const where = conditions.join(' OR ');
   const subquery = `SELECT id FROM messages WHERE ${where}`;
@@ -1129,7 +1141,9 @@ export function updateRole(id, props) {
     sets.push('color = @color');
     params.color = props.color;
   }
-  if (sets.length === 0) return;
+  if (sets.length === 0) {
+    return;
+  }
   db.prepare(`UPDATE roles SET ${sets.join(', ')} WHERE id = @id`).run(params);
 }
 
@@ -1205,7 +1219,9 @@ export function getAllChannelAllowedRoles() {
   const rows = db.prepare('SELECT channel_id, role_id FROM channel_allowed_roles').all();
   const map = new Map();
   for (const row of rows) {
-    if (!map.has(row.channel_id)) map.set(row.channel_id, []);
+    if (!map.has(row.channel_id)) {
+      map.set(row.channel_id, []);
+    }
     map.get(row.channel_id).push(row.role_id);
   }
   return map;
@@ -1266,7 +1282,9 @@ export function getAllChannelReadRoles() {
   const rows = db.prepare('SELECT channel_id, role_id FROM channel_read_roles').all();
   const map = new Map();
   for (const row of rows) {
-    if (!map.has(row.channel_id)) map.set(row.channel_id, []);
+    if (!map.has(row.channel_id)) {
+      map.set(row.channel_id, []);
+    }
     map.get(row.channel_id).push(row.role_id);
   }
   return map;
@@ -1308,7 +1326,9 @@ export function getAllChannelWriteRoles() {
   const rows = db.prepare('SELECT channel_id, role_id FROM channel_write_roles').all();
   const map = new Map();
   for (const row of rows) {
-    if (!map.has(row.channel_id)) map.set(row.channel_id, []);
+    if (!map.has(row.channel_id)) {
+      map.set(row.channel_id, []);
+    }
     map.get(row.channel_id).push(row.role_id);
   }
   return map;
@@ -1338,7 +1358,9 @@ export function getAllChannelVisibilityRoles() {
   const rows = db.prepare('SELECT channel_id, role_id FROM channel_visibility_roles').all();
   const map = new Map();
   for (const row of rows) {
-    if (!map.has(row.channel_id)) map.set(row.channel_id, []);
+    if (!map.has(row.channel_id)) {
+      map.set(row.channel_id, []);
+    }
     map.get(row.channel_id).push(row.role_id);
   }
   return map;
@@ -1464,7 +1486,9 @@ export function getAllConfigValues() {
  */
 export function getConfigValue(key) {
   const row = db.prepare('SELECT value FROM server_config WHERE key = ?').get(key);
-  if (!row) return undefined;
+  if (!row) {
+    return undefined;
+  }
   try {
     return JSON.parse(row.value);
   } catch {

@@ -46,12 +46,18 @@ export default function migrate(db) {
 function fixFileUrl(content) {
   try {
     const parsed = JSON.parse(content);
-    if (parsed.type !== 'file' || !parsed.url) return null;
+    if (parsed.type !== 'file' || !parsed.url) {
+      return null;
+    }
 
-    if (parsed.url.startsWith('/')) return null;
+    if (parsed.url.startsWith('/')) {
+      return null;
+    }
 
     const match = parsed.url.match(/^https?:\/\/[^/]+(\/files\/.+)$/);
-    if (!match) return null;
+    if (!match) {
+      return null;
+    }
 
     parsed.url = match[1];
     return JSON.stringify(parsed);

@@ -89,7 +89,9 @@ function handlePurge(client, data, msgId) {
     return send(client.ws, 'server:error', { code: 'INVALID_COMMAND', message: 'Usage: /purge <nickname>' }, msgId);
   }
 
-  if (nickname.startsWith('@')) nickname = nickname.slice(1);
+  if (nickname.startsWith('@')) {
+    nickname = nickname.slice(1);
+  }
 
   if (!client.permissions.has(PERMISSIONS.CHAT_SLASH_PURGE)) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You do not have permission to use /purge.' }, msgId);

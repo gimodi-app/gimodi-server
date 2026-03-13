@@ -30,7 +30,9 @@ function deleteChannelFiles(channelId) {
   for (const fileId of fileIds) {
     try {
       rmSync(join(uploadsDir, fileId), { recursive: true, force: true });
-    } catch { /* file cleanup is best-effort */ }
+    } catch {
+      /* file cleanup is best-effort */
+    }
   }
 }
 
@@ -43,11 +45,19 @@ function deleteChannelFiles(channelId) {
 function hasChannelReadAccess(client, channel) {
   if (channel.parentId) {
     const parent = state.channels.get(channel.parentId);
-    if (parent && !hasChannelReadAccess(client, parent)) return false;
+    if (parent && !hasChannelReadAccess(client, parent)) {
+      return false;
+    }
   }
-  if (!channel.readRoles || channel.readRoles.length === 0) return true;
-  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) return true;
-  if (!client.userId) return false;
+  if (!channel.readRoles || channel.readRoles.length === 0) {
+    return true;
+  }
+  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) {
+    return true;
+  }
+  if (!client.userId) {
+    return false;
+  }
   const userRoles = getUserRoles(client.userId);
   return userRoles.some((r) => channel.readRoles.includes(r.id));
 }
@@ -61,11 +71,19 @@ function hasChannelReadAccess(client, channel) {
 function hasChannelWriteAccess(client, channel) {
   if (channel.parentId) {
     const parent = state.channels.get(channel.parentId);
-    if (parent && !hasChannelWriteAccess(client, parent)) return false;
+    if (parent && !hasChannelWriteAccess(client, parent)) {
+      return false;
+    }
   }
-  if (!channel.writeRoles || channel.writeRoles.length === 0) return true;
-  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) return true;
-  if (!client.userId) return false;
+  if (!channel.writeRoles || channel.writeRoles.length === 0) {
+    return true;
+  }
+  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) {
+    return true;
+  }
+  if (!client.userId) {
+    return false;
+  }
   const userRoles = getUserRoles(client.userId);
   return userRoles.some((r) => channel.writeRoles.includes(r.id));
 }
@@ -79,12 +97,22 @@ function hasChannelWriteAccess(client, channel) {
 export function hasChannelVisibility(client, channel) {
   if (channel.parentId) {
     const parent = state.channels.get(channel.parentId);
-    if (parent && !hasChannelVisibility(client, parent)) return false;
+    if (parent && !hasChannelVisibility(client, parent)) {
+      return false;
+    }
   }
-  if (!channel.visibilityRoles || channel.visibilityRoles.length === 0) return true;
-  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_VISIBILITY_RESTRICTION)) return true;
-  if (client.channelId === channel.id) return true;
-  if (!client.userId) return false;
+  if (!channel.visibilityRoles || channel.visibilityRoles.length === 0) {
+    return true;
+  }
+  if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_VISIBILITY_RESTRICTION)) {
+    return true;
+  }
+  if (client.channelId === channel.id) {
+    return true;
+  }
+  if (!client.userId) {
+    return false;
+  }
   const userRoles = getUserRoles(client.userId);
   return userRoles.some((r) => channel.visibilityRoles.includes(r.id));
 }
@@ -106,7 +134,9 @@ export function handleLeaveChannel(client, data, msgId) {
     const hasScreenProducer = [...client.producers.values()].some((p) => p.appData?.screen && p.kind === 'video');
     if (hasScreenProducer) {
       for (const id of channel.clients) {
-        if (id === client.id) continue;
+        if (id === client.id) {
+          continue;
+        }
         const peer = state.clients.get(id);
         if (peer) {
           send(peer.ws, 'screen:stopped', { clientId: client.id });
@@ -119,7 +149,9 @@ export function handleLeaveChannel(client, data, msgId) {
 
   if (channel) {
     for (const id of channel.clients) {
-      if (id === client.id) continue;
+      if (id === client.id) {
+        continue;
+      }
       const peer = state.clients.get(id);
       if (peer) {
         send(peer.ws, 'channel:user-left', { channelId, clientId: client.id });
@@ -215,7 +247,9 @@ export async function handleJoinChannel(client, data, msgId) {
     const hasScreenProducer = [...client.producers.values()].some((p) => p.appData?.screen && p.kind === 'video');
     if (hasScreenProducer) {
       for (const id of oldChannel.clients) {
-        if (id === client.id) continue;
+        if (id === client.id) {
+          continue;
+        }
         const peer = state.clients.get(id);
         if (peer) {
           send(peer.ws, 'screen:stopped', { clientId: client.id });
@@ -228,7 +262,9 @@ export async function handleJoinChannel(client, data, msgId) {
 
   if (oldChannel) {
     for (const id of oldChannel.clients) {
-      if (id === client.id) continue;
+      if (id === client.id) {
+        continue;
+      }
       const peer = state.clients.get(id);
       if (peer) {
         send(peer.ws, 'channel:user-left', { channelId: oldChannelId, clientId: client.id });
@@ -238,8 +274,12 @@ export async function handleJoinChannel(client, data, msgId) {
 
   state.moveClientToChannel(client.id, channelId);
 
-  if (oldChannel) maybeCloseRouter(oldChannelId);
-  if (oldChannel) checkTemporaryChannel(oldChannelId);
+  if (oldChannel) {
+    maybeCloseRouter(oldChannelId);
+  }
+  if (oldChannel) {
+    checkTemporaryChannel(oldChannelId);
+  }
   checkTemporaryChannel(channelId);
 
   if (oldChannel && !hasChannelVisibility(client, oldChannel)) {
@@ -288,7 +328,9 @@ export async function handleJoinChannel(client, data, msgId) {
   send(client.ws, 'channel:joined', joinData, msgId);
 
   for (const id of channel.clients) {
-    if (id === client.id) continue;
+    if (id === client.id) {
+      continue;
+    }
     const peer = state.clients.get(id);
     if (peer) {
       send(peer.ws, 'channel:user-joined', {
@@ -509,7 +551,9 @@ export function handleDeleteChannel(client, data, msgId) {
             });
           }
         }
-        if (ch.router) ch.router.close();
+        if (ch.router) {
+          ch.router.close();
+        }
         deleteChannelFiles(ch.id);
         state.channels.delete(ch.id);
         dbDeleteChannel(ch.id);
@@ -522,7 +566,9 @@ export function handleDeleteChannel(client, data, msgId) {
     channel.deleteTimer = null;
   }
 
-  if (channel.router) channel.router.close();
+  if (channel.router) {
+    channel.router.close();
+  }
 
   deleteChannelFiles(channelId);
   state.channels.delete(channelId);
@@ -578,13 +624,27 @@ export function handleUpdateChannel(client, data, msgId) {
     }
   }
 
-  if (props.name !== undefined) channel.name = props.name;
-  if (props.password !== undefined && channel.type !== 'placeholder') channel.password = props.password || null;
-  if (props.maxUsers !== undefined && channel.type !== 'placeholder') channel.maxUsers = props.maxUsers || null;
-  if (props.description !== undefined && channel.type !== 'placeholder') channel.description = props.description;
-  if (props.parentId !== undefined) channel.parentId = props.parentId;
-  if (props.sortOrder !== undefined) channel.sortOrder = props.sortOrder;
-  if (props.moderated !== undefined && channel.type !== 'placeholder') channel.moderated = !!props.moderated;
+  if (props.name !== undefined) {
+    channel.name = props.name;
+  }
+  if (props.password !== undefined && channel.type !== 'placeholder') {
+    channel.password = props.password || null;
+  }
+  if (props.maxUsers !== undefined && channel.type !== 'placeholder') {
+    channel.maxUsers = props.maxUsers || null;
+  }
+  if (props.description !== undefined && channel.type !== 'placeholder') {
+    channel.description = props.description;
+  }
+  if (props.parentId !== undefined) {
+    channel.parentId = props.parentId;
+  }
+  if (props.sortOrder !== undefined) {
+    channel.sortOrder = props.sortOrder;
+  }
+  if (props.moderated !== undefined && channel.type !== 'placeholder') {
+    channel.moderated = !!props.moderated;
+  }
   if (props.allowedRoles !== undefined && Array.isArray(props.allowedRoles)) {
     channel.allowedRoles = props.allowedRoles;
     setChannelAllowedRoles(channelId, props.allowedRoles);
@@ -607,8 +667,12 @@ export function handleUpdateChannel(client, data, msgId) {
   if (props.moderated && channel.moderated) {
     for (const cid of channel.clients) {
       const peer = state.clients.get(cid);
-      if (!peer || peer.permissions.has(PERMISSIONS.CHANNEL_BYPASS_MODERATION)) continue;
-      if (channel.voiceGranted.has(cid)) continue;
+      if (!peer || peer.permissions.has(PERMISSIONS.CHANNEL_BYPASS_MODERATION)) {
+        continue;
+      }
+      if (channel.voiceGranted.has(cid)) {
+        continue;
+      }
       for (const [producerId, producer] of peer.producers) {
         if (producer.kind === 'audio' && !producer.appData?.screen) {
           producer.close();
@@ -654,7 +718,9 @@ export function handleUpdateChannel(client, data, msgId) {
     const aclChanged = props.visibilityRoles !== undefined || props.allowedRoles !== undefined || props.readRoles !== undefined || props.writeRoles !== undefined;
     if (aclChanged) {
       for (const [, child] of state.channels) {
-        if (child.parentId !== channel.id) continue;
+        if (child.parentId !== channel.id) {
+          continue;
+        }
         const childInfo = {
           id: child.id,
           name: child.name,
@@ -707,7 +773,9 @@ export function handleListChannels(client, data, msgId) {
  */
 function scheduleTemporaryChannelDelete(channelId) {
   const channel = state.channels.get(channelId);
-  if (!channel || !channel.isTemporary) return;
+  if (!channel || !channel.isTemporary) {
+    return;
+  }
 
   if (channel.deleteTimer) {
     clearTimeout(channel.deleteTimer);
@@ -718,14 +786,18 @@ function scheduleTemporaryChannelDelete(channelId) {
 
   channel.deleteTimer = setTimeout(() => {
     const ch = state.channels.get(channelId);
-    if (!ch || !ch.isTemporary) return;
+    if (!ch || !ch.isTemporary) {
+      return;
+    }
 
     if (ch.clients.size > 0) {
       ch.deleteTimer = null;
       return;
     }
 
-    if (ch.router) ch.router.close();
+    if (ch.router) {
+      ch.router.close();
+    }
 
     deleteChannelFiles(channelId);
     state.channels.delete(channelId);
@@ -744,7 +816,9 @@ function scheduleTemporaryChannelDelete(channelId) {
  */
 export function checkTemporaryChannel(channelId) {
   const channel = state.channels.get(channelId);
-  if (!channel || !channel.isTemporary) return;
+  if (!channel || !channel.isTemporary) {
+    return;
+  }
 
   if (channel.clients.size === 0) {
     scheduleTemporaryChannelDelete(channelId);

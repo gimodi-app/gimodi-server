@@ -31,7 +31,9 @@ import { send } from './handler.js';
  */
 function actorOutranksTarget(actor, targetUserId) {
   const actorPos = actor.userId ? getUserHighestRolePosition(actor.userId) : Infinity;
-  if (actorPos === 0) return true;
+  if (actorPos === 0) {
+    return true;
+  }
   const targetPos = targetUserId ? getUserHighestRolePosition(targetUserId) : Infinity;
   return actorPos < targetPos;
 }
@@ -212,7 +214,9 @@ export function handleListUsers(client, data, id) {
   const identities = getAllIdentities();
   const onlineByUserId = new Map();
   for (const c of state.clients.values()) {
-    if (c.userId) onlineByUserId.set(c.userId, c);
+    if (c.userId) {
+      onlineByUserId.set(c.userId, c);
+    }
   }
 
   const users = identities.map((identity) => {
@@ -290,10 +294,16 @@ export function handleBulkDeleteUsers(client, data, id) {
 
   let deleted = 0;
   for (const userId of userIds) {
-    if (typeof userId !== 'string') continue;
+    if (typeof userId !== 'string') {
+      continue;
+    }
     const identity = getIdentity(userId);
-    if (!identity) continue;
-    if (!actorOutranksTarget(client, userId)) continue;
+    if (!identity) {
+      continue;
+    }
+    if (!actorOutranksTarget(client, userId)) {
+      continue;
+    }
 
     for (const c of state.clients.values()) {
       if (c.userId === userId) {
@@ -456,20 +466,32 @@ export function handleGetAnalytics(client, data, id) {
   let activeChannels = 0;
 
   for (const channel of state.channels.values()) {
-    if (channel.clients.size > 0) activeChannels++;
-    if (channel.router) voiceRooms++;
+    if (channel.clients.size > 0) {
+      activeChannels++;
+    }
+    if (channel.router) {
+      voiceRooms++;
+    }
   }
 
   for (const c of state.clients.values()) {
-    if (c.sendTransport) clientsInVoice++;
+    if (c.sendTransport) {
+      clientsInVoice++;
+    }
     if (c.producers) {
       for (const producer of c.producers.values()) {
         totalProducers++;
-        if (producer.appData?.screen || producer.appData?.screenAudio) screenShares++;
-        if (producer.appData?.webcam) webcamStreams++;
+        if (producer.appData?.screen || producer.appData?.screenAudio) {
+          screenShares++;
+        }
+        if (producer.appData?.webcam) {
+          webcamStreams++;
+        }
       }
     }
-    if (c.consumers) totalConsumers += c.consumers.size;
+    if (c.consumers) {
+      totalConsumers += c.consumers.size;
+    }
   }
 
   const uptimeMs = Date.now() - startTime;

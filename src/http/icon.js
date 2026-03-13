@@ -14,9 +14,13 @@ const dataDir = resolve('data');
  */
 function getIconClient(req) {
   const clientId = req.headers['x-client-id'];
-  if (!clientId) return null;
+  if (!clientId) {
+    return null;
+  }
   const client = state.clients.get(clientId);
-  if (!client || !client.permissions.has('server.manage_settings')) return null;
+  if (!client || !client.permissions.has('server.manage_settings')) {
+    return null;
+  }
   return client;
 }
 
@@ -27,7 +31,9 @@ function deleteExistingIcon() {
   if (config.icon.filename) {
     try {
       unlinkSync(join(dataDir, config.icon.filename));
-    } catch { /* file may not exist */ }
+    } catch {
+      /* file may not exist */
+    }
   }
 }
 
@@ -65,10 +71,15 @@ export function handleIconUpload(req, res) {
 
     let ext = 'png';
     const ct = req.headers['content-type'] || '';
-    if (ct.includes('jpeg') || ct.includes('jpg')) ext = 'jpg';
-    else if (ct.includes('gif')) ext = 'gif';
-    else if (ct.includes('webp')) ext = 'webp';
-    else if (ct.includes('svg')) ext = 'svg';
+    if (ct.includes('jpeg') || ct.includes('jpg')) {
+      ext = 'jpg';
+    } else if (ct.includes('gif')) {
+      ext = 'gif';
+    } else if (ct.includes('webp')) {
+      ext = 'webp';
+    } else if (ct.includes('svg')) {
+      ext = 'svg';
+    }
 
     deleteExistingIcon();
 
