@@ -25,7 +25,9 @@ function getIconClient(req) {
  */
 function deleteExistingIcon() {
   if (config.icon.filename) {
-    try { unlinkSync(join(dataDir, config.icon.filename)); } catch {}
+    try {
+      unlinkSync(join(dataDir, config.icon.filename));
+    } catch {}
   }
 }
 
@@ -50,7 +52,7 @@ export function handleIconUpload(req, res) {
   }
 
   const chunks = [];
-  req.on('data', chunk => chunks.push(chunk));
+  req.on('data', (chunk) => chunks.push(chunk));
   req.on('end', () => {
     const buffer = Buffer.concat(chunks);
     if (buffer.length === 0) {
@@ -109,7 +111,9 @@ export function handleIconDownload(req, res) {
   }
 
   const filePath = join(dataDir, config.icon.filename);
-  try { statSync(filePath); } catch {
+  try {
+    statSync(filePath);
+  } catch {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Icon file missing' }));
     return;
@@ -117,7 +121,7 @@ export function handleIconDownload(req, res) {
 
   res.writeHead(200, {
     'Content-Type': getMimeType(config.icon.filename),
-    'ETag': etag,
+    ETag: etag,
     'Cache-Control': 'public, max-age=31536000, immutable',
   });
   createReadStream(filePath).pipe(res);

@@ -3,10 +3,6 @@
  * These keys (and their children) are stripped from server:get-settings responses.
  * @type {string[]}
  */
-const HIDDEN_SETTINGS = [
-  'ssl.certPath',
-  'ssl.keyPath',
-  'metrics.allowedNetwork',
-];
+const HIDDEN_SETTINGS = ['ssl.certPath', 'ssl.keyPath', 'metrics.allowedNetwork'];
 
 export default HIDDEN_SETTINGS;

@@ -41,29 +41,29 @@ const defaults = {
 
 /** @type {Record<string, {key: string, type: string}>} */
 const ENV_MAP = {
-  GIMODI_NAME:                          { key: 'name', type: 'string' },
-  GIMODI_PORT:                          { key: 'port', type: 'number' },
-  GIMODI_PASSWORD:                      { key: 'password', type: 'string' },
-  GIMODI_MAX_CLIENTS:                   { key: 'maxClients', type: 'number' },
-  GIMODI_MAX_CONNECTIONS_PER_IP:        { key: 'maxConnectionsPerIp', type: 'number' },
-  GIMODI_MEDIA_LISTEN_IP:              { key: 'media.listenIp', type: 'string' },
-  GIMODI_MEDIA_ANNOUNCED_IP:           { key: 'media.announcedIp', type: 'string' },
-  GIMODI_MEDIA_RTC_PORT:               { key: 'media.rtcPort', type: 'number' },
-  GIMODI_MEDIA_WORKERS:                { key: 'media.workers', type: 'number' },
-  GIMODI_MEDIA_LOG_LEVEL:              { key: 'media.logLevel', type: 'string' },
-  GIMODI_CHAT_PERSIST_MESSAGES:        { key: 'chat.persistMessages', type: 'boolean' },
+  GIMODI_NAME: { key: 'name', type: 'string' },
+  GIMODI_PORT: { key: 'port', type: 'number' },
+  GIMODI_PASSWORD: { key: 'password', type: 'string' },
+  GIMODI_MAX_CLIENTS: { key: 'maxClients', type: 'number' },
+  GIMODI_MAX_CONNECTIONS_PER_IP: { key: 'maxConnectionsPerIp', type: 'number' },
+  GIMODI_MEDIA_LISTEN_IP: { key: 'media.listenIp', type: 'string' },
+  GIMODI_MEDIA_ANNOUNCED_IP: { key: 'media.announcedIp', type: 'string' },
+  GIMODI_MEDIA_RTC_PORT: { key: 'media.rtcPort', type: 'number' },
+  GIMODI_MEDIA_WORKERS: { key: 'media.workers', type: 'number' },
+  GIMODI_MEDIA_LOG_LEVEL: { key: 'media.logLevel', type: 'string' },
+  GIMODI_CHAT_PERSIST_MESSAGES: { key: 'chat.persistMessages', type: 'boolean' },
   GIMODI_CHAT_TEMP_CHANNEL_DELETE_DELAY: { key: 'chat.tempChannelDeleteDelay', type: 'number' },
-  GIMODI_FILES_MAX_FILE_SIZE:          { key: 'files.maxFileSize', type: 'number' },
-  GIMODI_FILES_STORAGE_PATH:           { key: 'files.storagePath', type: 'string' },
-  GIMODI_FILES_PUBLIC_URL:             { key: 'files.publicUrl', type: 'string' },
-  GIMODI_DEFAULT_CHANNEL_ID:           { key: 'defaultChannelId', type: 'string' },
-  GIMODI_GENERATE_ADMIN_TOKEN:         { key: 'generateAdminToken', type: 'boolean' },
-  GIMODI_SSL_CERT_PATH:               { key: 'ssl.certPath', type: 'string' },
-  GIMODI_SSL_KEY_PATH:                 { key: 'ssl.keyPath', type: 'string' },
-  GIMODI_ICON_HASH:                    { key: 'icon.hash', type: 'string' },
-  GIMODI_ICON_FILENAME:               { key: 'icon.filename', type: 'string' },
-  GIMODI_METRICS_ENABLED:             { key: 'metrics.enabled', type: 'boolean' },
-  GIMODI_METRICS_ALLOWED_NETWORK:     { key: 'metrics.allowedNetwork', type: 'string' },
+  GIMODI_FILES_MAX_FILE_SIZE: { key: 'files.maxFileSize', type: 'number' },
+  GIMODI_FILES_STORAGE_PATH: { key: 'files.storagePath', type: 'string' },
+  GIMODI_FILES_PUBLIC_URL: { key: 'files.publicUrl', type: 'string' },
+  GIMODI_DEFAULT_CHANNEL_ID: { key: 'defaultChannelId', type: 'string' },
+  GIMODI_GENERATE_ADMIN_TOKEN: { key: 'generateAdminToken', type: 'boolean' },
+  GIMODI_SSL_CERT_PATH: { key: 'ssl.certPath', type: 'string' },
+  GIMODI_SSL_KEY_PATH: { key: 'ssl.keyPath', type: 'string' },
+  GIMODI_ICON_HASH: { key: 'icon.hash', type: 'string' },
+  GIMODI_ICON_FILENAME: { key: 'icon.filename', type: 'string' },
+  GIMODI_METRICS_ENABLED: { key: 'metrics.enabled', type: 'boolean' },
+  GIMODI_METRICS_ALLOWED_NETWORK: { key: 'metrics.allowedNetwork', type: 'string' },
 };
 
 /**
@@ -106,9 +106,12 @@ function setNestedValue(obj, path, value) {
 function parseEnvValue(raw, type) {
   if (raw === '' || raw === 'null') return null;
   switch (type) {
-    case 'number': return Number(raw);
-    case 'boolean': return raw === 'true' || raw === '1';
-    default: return raw;
+    case 'number':
+      return Number(raw);
+    case 'boolean':
+      return raw === 'true' || raw === '1';
+    default:
+      return raw;
   }
 }
 

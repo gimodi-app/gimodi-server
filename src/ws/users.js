@@ -43,11 +43,16 @@ export function handleGetPublicKey(client, data, id) {
     return send(client.ws, 'user:public-key', { clientId, publicKey: null }, id);
   }
   const identity = getIdentity(target.userId);
-  send(client.ws, 'user:public-key', {
-    clientId,
-    userId: target.userId,
-    publicKey: identity ? identity.public_key : null,
-  }, id);
+  send(
+    client.ws,
+    'user:public-key',
+    {
+      clientId,
+      userId: target.userId,
+      publicKey: identity ? identity.public_key : null,
+    },
+    id,
+  );
 }
 
 /**

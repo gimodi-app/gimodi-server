@@ -14,28 +14,20 @@ const logger = createLogger({
   format: format.combine(
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     format.errors({ stack: true }),
-    format.printf(({ timestamp, level, message, stack }) =>
-      stack
-        ? `${timestamp} [${level.toUpperCase()}] ${message}\n${stack}`
-        : `${timestamp} [${level.toUpperCase()}] ${message}`
-    )
+    format.printf(({ timestamp, level, message, stack }) => (stack ? `${timestamp} [${level.toUpperCase()}] ${message}\n${stack}` : `${timestamp} [${level.toUpperCase()}] ${message}`)),
   ),
-  transports: [
-    new transports.File({ filename: logFile }),
-  ],
+  transports: [new transports.File({ filename: logFile })],
 });
 
-logger.add(new transports.Console({
-  format: format.combine(
-    format.colorize(),
-    format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    format.errors({ stack: true }),
-    format.printf(({ timestamp, level, message, stack }) =>
-      stack
-        ? `${timestamp} [${level}] ${message}\n${stack}`
-        : `${timestamp} [${level}] ${message}`
-    )
-  ),
-}));
+logger.add(
+  new transports.Console({
+    format: format.combine(
+      format.colorize(),
+      format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+      format.errors({ stack: true }),
+      format.printf(({ timestamp, level, message, stack }) => (stack ? `${timestamp} [${level}] ${message}\n${stack}` : `${timestamp} [${level}] ${message}`)),
+    ),
+  }),
+);
 
 export default logger;

@@ -1,7 +1,30 @@
 import { randomUUID } from 'node:crypto';
 import state from '../state.js';
 import { PERMISSIONS } from '../permissions.js';
-import { addBan, getAllBans, deleteBan, logAuditEvent, getAuditLog, getIdentity, getAllIdentities, getUserRoles, getUserPermissions, getUserBadge, deleteIdentity, deleteUserRoles, deleteUserDmMessages, assignRole, removeRole, isBannedByUserId, getRegisteredNicknames, deleteNicknameRegistration, getNicknameOwner, registerNickname, getUserHighestRolePosition, getAnalyticsData } from '../db/database.js';
+import {
+  addBan,
+  getAllBans,
+  deleteBan,
+  logAuditEvent,
+  getAuditLog,
+  getIdentity,
+  getAllIdentities,
+  getUserRoles,
+  getUserPermissions,
+  getUserBadge,
+  deleteIdentity,
+  deleteUserRoles,
+  deleteUserDmMessages,
+  assignRole,
+  removeRole,
+  isBannedByUserId,
+  getRegisteredNicknames,
+  deleteNicknameRegistration,
+  getNicknameOwner,
+  registerNickname,
+  getUserHighestRolePosition,
+  getAnalyticsData,
+} from '../db/database.js';
 import { counters, startTime } from '../metrics.js';
 import { send, broadcast } from './handler.js';
 
@@ -85,7 +108,7 @@ export function handleBan(client, data, id) {
   if (!actorOutranksTarget(client, target.userId)) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot ban a user with equal or higher rank.' }, id);
   }
-  const expiresAt = (duration && duration > 0) ? Date.now() + (duration * 1000) : null;
+  const expiresAt = duration && duration > 0 ? Date.now() + duration * 1000 : null;
   const banReason = reason || 'Banned by admin.';
   addBan({
     id: randomUUID(),
@@ -114,9 +137,9 @@ export function handleListBans(client, data, id) {
   }
   const bans = getAllBans();
   const now = Date.now();
-  const bansWithExpiry = bans.map(ban => ({
+  const bansWithExpiry = bans.map((ban) => ({
     ...ban,
-    isExpired: ban.expires_at ? (ban.expires_at <= now) : false
+    isExpired: ban.expires_at ? ban.expires_at <= now : false,
   }));
   send(client.ws, 'admin:bans-list', { bans: bansWithExpiry }, id);
 }
@@ -197,7 +220,7 @@ export function handleListUsers(client, data, id) {
     if (c.userId) onlineByUserId.set(c.userId, c);
   }
 
-  const users = identities.map(identity => {
+  const users = identities.map((identity) => {
     const onlineClient = onlineByUserId.get(identity.user_id);
     const roles = getUserRoles(identity.user_id);
     const registeredNicknames = getRegisteredNicknames(identity.user_id);
@@ -317,7 +340,7 @@ export function handleBanByUserId(client, data, id) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You cannot ban a user with equal or higher rank.' }, id);
   }
 
-  const expiresAt = (duration && duration > 0) ? Date.now() + (duration * 1000) : null;
+  const expiresAt = duration && duration > 0 ? Date.now() + duration * 1000 : null;
   const banReason = reason || 'Banned by admin.';
 
   addBan({
@@ -457,23 +480,28 @@ export function handleGetAnalytics(client, data, id) {
   const uptimeMs = Date.now() - startTime;
   const dbData = getAnalyticsData();
 
-  send(client.ws, 'admin:analytics', {
-    live: {
-      connectedClients,
-      clientsInVoice,
-      activeChannels,
-      voiceRooms,
-      totalProducers,
-      totalConsumers,
-      screenShares,
-      webcamStreams,
-      uptimeMs,
-      sessionsTotal: counters.connectionsTotal,
-      wsMessagesTotal: counters.websocketMessagesTotal,
-      sessionMessagesTotal: counters.messagesTotal,
-      sessionDmsTotal: counters.dmMessagesTotal,
-      sessionFilesTotal: counters.filesUploadedTotal,
+  send(
+    client.ws,
+    'admin:analytics',
+    {
+      live: {
+        connectedClients,
+        clientsInVoice,
+        activeChannels,
+        voiceRooms,
+        totalProducers,
+        totalConsumers,
+        screenShares,
+        webcamStreams,
+        uptimeMs,
+        sessionsTotal: counters.connectionsTotal,
+        wsMessagesTotal: counters.websocketMessagesTotal,
+        sessionMessagesTotal: counters.messagesTotal,
+        sessionDmsTotal: counters.dmMessagesTotal,
+        sessionFilesTotal: counters.filesUploadedTotal,
+      },
+      db: dbData,
     },
-    db: dbData,
-  }, id);
+    id,
+  );
 }

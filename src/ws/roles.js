@@ -1,7 +1,27 @@
 import { randomUUID } from 'node:crypto';
 import state from '../state.js';
 import { PERMISSIONS, ALL_PERMISSIONS, PERMISSION_LABELS, PERMISSION_GROUPS } from '../permissions.js';
-import { getUserRoles, getUserPermissions, getUserBadge, getUserRoleColor, assignRole, removeRole, getRoles, createRole, updateRole, deleteRole, getRolePermissions, setRolePermissions, getRoleMembers, getIdentity, logAuditEvent, getUserHighestRolePosition, getRolePosition, updateRolePositions, getNextRolePosition } from '../db/database.js';
+import {
+  getUserRoles,
+  getUserPermissions,
+  getUserBadge,
+  getUserRoleColor,
+  assignRole,
+  removeRole,
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+  getRolePermissions,
+  setRolePermissions,
+  getRoleMembers,
+  getIdentity,
+  logAuditEvent,
+  getUserHighestRolePosition,
+  getRolePosition,
+  updateRolePositions,
+  getNextRolePosition,
+} from '../db/database.js';
 import { send, broadcast } from './handler.js';
 
 /**
@@ -12,8 +32,12 @@ import { send, broadcast } from './handler.js';
 function permKeyToLabel(key) {
   const [namespace, ...parts] = key.split('.');
   const ns = namespace.charAt(0).toUpperCase() + namespace.slice(1);
-  const action = parts.join(' ').replace(/_/g, ' ').split(' ')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const action = parts
+    .join(' ')
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
   return `${ns}: ${action}`;
 }
 
@@ -271,7 +295,7 @@ export function handleRoleList(client, data, id) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'Admin access required.' }, id);
   }
   const roles = getRoles();
-  const rolesWithPerms = roles.map(r => ({
+  const rolesWithPerms = roles.map((r) => ({
     id: r.id,
     name: r.name,
     badge: r.badge,
@@ -291,14 +315,14 @@ export function handleRoleListPermissions(client, data, id) {
   if (!client.permissions.has(PERMISSIONS.ROLE_MANAGE)) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'Admin access required.' }, id);
   }
-  const permissions = [...ALL_PERMISSIONS].map(key => ({
+  const permissions = [...ALL_PERMISSIONS].map((key) => ({
     key,
     label: PERMISSION_LABELS[key] || permKeyToLabel(key),
   }));
-  const groups = PERMISSION_GROUPS.map(g => ({
+  const groups = PERMISSION_GROUPS.map((g) => ({
     id: g.id,
     label: g.label,
-    permissions: g.permissions.map(key => ({
+    permissions: g.permissions.map((key) => ({
       key,
       label: PERMISSION_LABELS[key] || permKeyToLabel(key),
     })),
@@ -358,12 +382,12 @@ export function handleRoleUpdate(client, data, id) {
   }
   send(client.ws, 'role:updated', { roleId, name, badge, color }, id);
 
-  const affectedUserIds = getRoleMembers(roleId).map(m => m.user_id);
+  const affectedUserIds = getRoleMembers(roleId).map((m) => m.user_id);
 
   for (const c of state.clients.values()) {
     if (!c.userId) continue;
     const userRoles = getUserRoles(c.userId);
-    if (userRoles.some(r => r.id === roleId)) {
+    if (userRoles.some((r) => r.id === roleId)) {
       c.badge = getUserBadge(c.userId);
       c.roleColor = getUserRoleColor(c.userId);
       broadcast('server:admin-changed', { clientId: c.id, badge: c.badge, roleColor: c.roleColor });
@@ -394,7 +418,7 @@ export function handleRoleDelete(client, data, id) {
   const affected = [];
   for (const c of state.clients.values()) {
     if (!c.userId) continue;
-    if (getUserRoles(c.userId).some(r => r.id === roleId)) affected.push(c);
+    if (getUserRoles(c.userId).some((r) => r.id === roleId)) affected.push(c);
   }
   deleteRole(roleId);
   for (const c of affected) {
@@ -436,7 +460,7 @@ export function handleRoleSetPermissions(client, data, id) {
   for (const c of state.clients.values()) {
     if (!c.userId) continue;
     const userRoles = getUserRoles(c.userId);
-    if (userRoles.some(r => r.id === roleId)) {
+    if (userRoles.some((r) => r.id === roleId)) {
       c.permissions = getUserPermissions(c.userId);
       c.badge = getUserBadge(c.userId);
       broadcast('server:admin-changed', { clientId: c.id, badge: c.badge });

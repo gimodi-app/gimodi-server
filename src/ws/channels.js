@@ -2,7 +2,18 @@ import { randomUUID } from 'node:crypto';
 import { rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import state from '../state.js';
-import { insertChannel, deleteChannel as dbDeleteChannel, updateChannel as dbUpdateChannel, getUserRoles, setChannelAllowedRoles, setChannelWriteRoles, setChannelReadRoles, setChannelVisibilityRoles, logAuditEvent, getChannelFileIds } from '../db/database.js';
+import {
+  insertChannel,
+  deleteChannel as dbDeleteChannel,
+  updateChannel as dbUpdateChannel,
+  getUserRoles,
+  setChannelAllowedRoles,
+  setChannelWriteRoles,
+  setChannelReadRoles,
+  setChannelVisibilityRoles,
+  logAuditEvent,
+  getChannelFileIds,
+} from '../db/database.js';
 import { send, broadcast } from './handler.js';
 import { ensureRouter, cleanupClientMedia, maybeCloseRouter, createConsumersForProducer, consumeExistingProducers } from '../media/room.js';
 import { PERMISSIONS } from '../permissions.js';
@@ -38,7 +49,7 @@ function hasChannelReadAccess(client, channel) {
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) return true;
   if (!client.userId) return false;
   const userRoles = getUserRoles(client.userId);
-  return userRoles.some(r => channel.readRoles.includes(r.id));
+  return userRoles.some((r) => channel.readRoles.includes(r.id));
 }
 
 /**
@@ -56,7 +67,7 @@ function hasChannelWriteAccess(client, channel) {
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) return true;
   if (!client.userId) return false;
   const userRoles = getUserRoles(client.userId);
-  return userRoles.some(r => channel.writeRoles.includes(r.id));
+  return userRoles.some((r) => channel.writeRoles.includes(r.id));
 }
 
 /**
@@ -75,7 +86,7 @@ export function hasChannelVisibility(client, channel) {
   if (client.channelId === channel.id) return true;
   if (!client.userId) return false;
   const userRoles = getUserRoles(client.userId);
-  return userRoles.some(r => channel.visibilityRoles.includes(r.id));
+  return userRoles.some((r) => channel.visibilityRoles.includes(r.id));
 }
 
 /**
@@ -92,7 +103,7 @@ export function handleLeaveChannel(client, data, msgId) {
   const channel = state.channels.get(channelId);
 
   if (channel) {
-    const hasScreenProducer = [...client.producers.values()].some(p => p.appData?.screen && p.kind === 'video');
+    const hasScreenProducer = [...client.producers.values()].some((p) => p.appData?.screen && p.kind === 'video');
     if (hasScreenProducer) {
       for (const id of channel.clients) {
         if (id === client.id) continue;
@@ -172,7 +183,7 @@ export async function handleJoinChannel(client, data, msgId) {
     let hasRole = false;
     if (client.userId) {
       const userRoles = getUserRoles(client.userId);
-      hasRole = userRoles.some(r => channel.allowedRoles.includes(r.id));
+      hasRole = userRoles.some((r) => channel.allowedRoles.includes(r.id));
     }
     if (!hasRole) {
       return send(client.ws, 'server:error', { code: 'ROLE_RESTRICTED', message: 'You do not have the required role to join this channel.' }, msgId);
@@ -185,7 +196,7 @@ export async function handleJoinChannel(client, data, msgId) {
       let hasRole = false;
       if (client.userId) {
         const userRoles = getUserRoles(client.userId);
-        hasRole = userRoles.some(r => parent.allowedRoles.includes(r.id));
+        hasRole = userRoles.some((r) => parent.allowedRoles.includes(r.id));
       }
       if (!hasRole) {
         return send(client.ws, 'server:error', { code: 'ROLE_RESTRICTED', message: 'You do not have the required role to join this channel.' }, msgId);
@@ -201,7 +212,7 @@ export async function handleJoinChannel(client, data, msgId) {
   const oldChannel = state.channels.get(oldChannelId);
 
   if (oldChannel) {
-    const hasScreenProducer = [...client.producers.values()].some(p => p.appData?.screen && p.kind === 'video');
+    const hasScreenProducer = [...client.producers.values()].some((p) => p.appData?.screen && p.kind === 'video');
     if (hasScreenProducer) {
       for (const id of oldChannel.clients) {
         if (id === client.id) continue;
@@ -257,7 +268,7 @@ export async function handleJoinChannel(client, data, msgId) {
     send(client.ws, 'channel:created', { channel: channelInfo });
   }
 
-  const channelClients = state.getClientsByChannel(channelId).map(c => ({
+  const channelClients = state.getClientsByChannel(channelId).map((c) => ({
     id: c.id,
     nickname: c.nickname,
   }));
@@ -369,9 +380,9 @@ export function handleCreateChannel(client, data, msgId) {
     id: randomUUID(),
     name: name.trim(),
     parentId: parentId || null,
-    password: (type === 'group' || type === 'placeholder') ? null : (password || null),
-    maxUsers: (type === 'placeholder') ? null : (maxUsers || null),
-    description: (type === 'placeholder') ? '' : (description || ''),
+    password: type === 'group' || type === 'placeholder' ? null : password || null,
+    maxUsers: type === 'placeholder' ? null : maxUsers || null,
+    description: type === 'placeholder' ? '' : description || '',
     isDefault: false,
     sortOrder: state.channels.size,
     moderated: !!moderated,
@@ -458,7 +469,7 @@ export function handleDeleteChannel(client, data, msgId) {
       state.moveClientToChannel(clientId, defaultChannelId);
       send(peer.ws, 'channel:joined', {
         channelId: defaultChannelId,
-        clients: state.getClientsByChannel(defaultChannelId).map(c => ({ id: c.id, nickname: c.nickname })),
+        clients: state.getClientsByChannel(defaultChannelId).map((c) => ({ id: c.id, nickname: c.nickname })),
       });
     }
   }
@@ -470,11 +481,17 @@ export function handleDeleteChannel(client, data, msgId) {
         dbUpdateChannel(ch.id, { parentId: null });
         broadcast('channel:updated', {
           channel: {
-            id: ch.id, name: ch.name, parentId: null,
-            hasPassword: !!ch.password, maxUsers: ch.maxUsers,
-            description: ch.description, isDefault: ch.isDefault,
-            sortOrder: ch.sortOrder, moderated: ch.moderated,
-            type: ch.type || 'channel', allowedRoles: ch.allowedRoles || [],
+            id: ch.id,
+            name: ch.name,
+            parentId: null,
+            hasPassword: !!ch.password,
+            maxUsers: ch.maxUsers,
+            description: ch.description,
+            isDefault: ch.isDefault,
+            sortOrder: ch.sortOrder,
+            moderated: ch.moderated,
+            type: ch.type || 'channel',
+            allowedRoles: ch.allowedRoles || [],
             writeRoles: ch.writeRoles || [],
             readRoles: ch.readRoles || [],
             userCount: ch.clients.size,
@@ -488,7 +505,7 @@ export function handleDeleteChannel(client, data, msgId) {
             state.moveClientToChannel(clientId, defaultChannelId);
             send(peer.ws, 'channel:joined', {
               channelId: defaultChannelId,
-              clients: state.getClientsByChannel(defaultChannelId).map(c => ({ id: c.id, nickname: c.nickname })),
+              clients: state.getClientsByChannel(defaultChannelId).map((c) => ({ id: c.id, nickname: c.nickname })),
             });
           }
         }
@@ -634,8 +651,7 @@ export function handleUpdateChannel(client, data, msgId) {
   }
 
   if (channel.type === 'group') {
-    const aclChanged = props.visibilityRoles !== undefined || props.allowedRoles !== undefined
-      || props.readRoles !== undefined || props.writeRoles !== undefined;
+    const aclChanged = props.visibilityRoles !== undefined || props.allowedRoles !== undefined || props.readRoles !== undefined || props.writeRoles !== undefined;
     if (aclChanged) {
       for (const [, child] of state.channels) {
         if (child.parentId !== channel.id) continue;
@@ -678,7 +694,7 @@ export function handleUpdateChannel(client, data, msgId) {
  * @param {string} [msgId]
  */
 export function handleListChannels(client, data, msgId) {
-  const channels = state.getChannelList().filter(ch => {
+  const channels = state.getChannelList().filter((ch) => {
     const channel = state.channels.get(ch.id);
     return !channel || hasChannelVisibility(client, channel);
   });

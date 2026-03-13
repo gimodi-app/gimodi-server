@@ -16,9 +16,7 @@ export default function migrate(db) {
   `);
 
   const identities = db.prepare('SELECT user_id, name, created_at FROM identities').all();
-  const insert = db.prepare(
-    'INSERT OR IGNORE INTO nickname_registrations (user_id, nickname, registered_at) VALUES (?, ?, ?)'
-  );
+  const insert = db.prepare('INSERT OR IGNORE INTO nickname_registrations (user_id, nickname, registered_at) VALUES (?, ?, ?)');
 
   const txn = db.transaction(() => {
     for (const identity of identities) {

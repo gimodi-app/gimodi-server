@@ -4,7 +4,38 @@ const MAX_MESSAGE_LENGTH = 4000;
 import state from '../state.js';
 import config from '../config.js';
 import { incrementCounter } from '../metrics.js';
-import { insertMessage, getMessages, getMessagesAround, getMessage, updateMessage, deleteMessage, updateMessagePreviews, clearMessagePreviews, insertDmMessage, getDmMessages, getUserBadge, getUserRoleColor, insertServerMessage, getServerMessages, getServerMessage, deleteServerMessage, addReaction, removeReaction, getReactions, pinMessage, unpinMessage, getPinnedMessages, isMessagePinned, getUserRoles, getIdentity, getChannelFiles, getFile, deleteFile, getMessageByFileId, searchMessages } from '../db/database.js';
+import {
+  insertMessage,
+  getMessages,
+  getMessagesAround,
+  getMessage,
+  updateMessage,
+  deleteMessage,
+  updateMessagePreviews,
+  clearMessagePreviews,
+  insertDmMessage,
+  getDmMessages,
+  getUserBadge,
+  getUserRoleColor,
+  insertServerMessage,
+  getServerMessages,
+  getServerMessage,
+  deleteServerMessage,
+  addReaction,
+  removeReaction,
+  getReactions,
+  pinMessage,
+  unpinMessage,
+  getPinnedMessages,
+  isMessagePinned,
+  getUserRoles,
+  getIdentity,
+  getChannelFiles,
+  getFile,
+  deleteFile,
+  getMessageByFileId,
+  searchMessages,
+} from '../db/database.js';
 import { rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { send } from './handler.js';
@@ -26,7 +57,7 @@ function hasChannelReadAccess(client, channel) {
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_READ_RESTRICTION)) return true;
   if (!client.userId) return false;
   const userRoles = getUserRoles(client.userId);
-  return userRoles.some(r => channel.readRoles.includes(r.id));
+  return userRoles.some((r) => channel.readRoles.includes(r.id));
 }
 
 /**
@@ -44,7 +75,7 @@ function hasChannelWriteAccess(client, channel) {
   if (client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_WRITE_RESTRICTION)) return true;
   if (!client.userId) return false;
   const userRoles = getUserRoles(client.userId);
-  return userRoles.some(r => channel.writeRoles.includes(r.id));
+  return userRoles.some((r) => channel.writeRoles.includes(r.id));
 }
 
 /**
@@ -70,7 +101,7 @@ function checkChannelChatAccess(client, channelId, password) {
     let hasRole = false;
     if (client.userId) {
       const userRoles = getUserRoles(client.userId);
-      hasRole = userRoles.some(r => channel.allowedRoles.includes(r.id));
+      hasRole = userRoles.some((r) => channel.allowedRoles.includes(r.id));
     }
     if (!hasRole) {
       return { code: 'ROLE_RESTRICTED', message: 'You do not have the required role to access this channel.' };
@@ -132,7 +163,7 @@ export function handleChatSend(client, data, msgId) {
     let hasRole = false;
     if (client.userId) {
       const userRoles = getUserRoles(client.userId);
-      hasRole = userRoles.some(r => channel.writeRoles.includes(r.id));
+      hasRole = userRoles.some((r) => channel.writeRoles.includes(r.id));
     }
     if (!hasRole) {
       return send(client.ws, 'server:error', { code: 'WRITE_RESTRICTED', message: 'You do not have permission to send messages in this channel.' }, msgId);
@@ -218,27 +249,29 @@ export function handleChatSend(client, data, msgId) {
     }
   }
 
-  fetchLinkPreviews(message.content).then((previews) => {
-    if (previews.length === 0) return;
+  fetchLinkPreviews(message.content)
+    .then((previews) => {
+      if (previews.length === 0) return;
 
-    if (config.chat.persistMessages) {
-      updateMessagePreviews(message.id, previews);
-    }
-
-    const ch = state.channels.get(channelId);
-    if (!ch) return;
-
-    const notifiedPrev = new Set(ch.clients);
-    for (const peerId of notifiedPrev) {
-      const peer = state.clients.get(peerId);
-      if (peer && hasChannelReadAccess(peer, ch)) send(peer.ws, 'chat:link-preview', { messageId: message.id, channelId, previews });
-    }
-    for (const peer of state.clients.values()) {
-      if (!notifiedPrev.has(peer.id) && peer.chatSubscriptions.has(channelId) && hasChannelReadAccess(peer, ch)) {
-        send(peer.ws, 'chat:link-preview', { messageId: message.id, channelId, previews });
+      if (config.chat.persistMessages) {
+        updateMessagePreviews(message.id, previews);
       }
-    }
-  }).catch(() => { });
+
+      const ch = state.channels.get(channelId);
+      if (!ch) return;
+
+      const notifiedPrev = new Set(ch.clients);
+      for (const peerId of notifiedPrev) {
+        const peer = state.clients.get(peerId);
+        if (peer && hasChannelReadAccess(peer, ch)) send(peer.ws, 'chat:link-preview', { messageId: message.id, channelId, previews });
+      }
+      for (const peer of state.clients.values()) {
+        if (!notifiedPrev.has(peer.id) && peer.chatSubscriptions.has(channelId) && hasChannelReadAccess(peer, ch)) {
+          send(peer.ws, 'chat:link-preview', { messageId: message.id, channelId, previews });
+        }
+      }
+    })
+    .catch(() => {});
 }
 
 /**
@@ -320,7 +353,7 @@ export function handleDmHistory(client, data, msgId) {
     limit: Math.min(limit || 50, 100),
   });
 
-  const messages = rows.map(r => ({
+  const messages = rows.map((r) => ({
     id: r.id,
     fromUserId: r.from_user_id,
     toUserId: r.to_user_id,
@@ -364,7 +397,7 @@ export function handleChatHistory(client, data, msgId) {
 
   const badgeCache = new Map();
   const colorCache = new Map();
-  const messages = rows.map(r => {
+  const messages = rows.map((r) => {
     const userId = r.user_id || null;
     let badge;
     let roleColor = null;
@@ -399,7 +432,7 @@ export function handleChatHistory(client, data, msgId) {
   });
 
   const pinnedRows = getPinnedMessages(channelId);
-  const pinnedMessageIds = pinnedRows.map(r => r.message_id);
+  const pinnedMessageIds = pinnedRows.map((r) => r.message_id);
 
   send(client.ws, 'chat:history-result', { channelId, messages, pinnedMessageIds }, msgId);
 }
@@ -424,7 +457,7 @@ export function handleChatContext(client, data, msgId) {
 
   const badgeCache = new Map();
   const colorCache = new Map();
-  const messages = rows.map(r => {
+  const messages = rows.map((r) => {
     const userId = r.user_id || null;
     let badge;
     let roleColor = null;
@@ -530,7 +563,7 @@ export function handleServerChatHistory(client, data, msgId) {
 
   const badgeCache = new Map();
   const colorCache = new Map();
-  const messages = rows.map(r => {
+  const messages = rows.map((r) => {
     const userId = r.user_id || null;
     let badge;
     let roleColor = null;
@@ -591,7 +624,9 @@ export function handleChatDelete(client, data, msgId) {
       const file = getFile(parsed.fileId);
       if (file) {
         const uploadsDir = resolve(config.files.storagePath);
-        try { rmSync(join(uploadsDir, parsed.fileId), { recursive: true, force: true }); } catch {}
+        try {
+          rmSync(join(uploadsDir, parsed.fileId), { recursive: true, force: true });
+        } catch {}
         deleteFile(parsed.fileId);
       }
     }
@@ -733,7 +768,10 @@ export function handleTypingIndicator(client, data, msgId) {
   for (const peerId of channel.clients) {
     if (peerId === client.id) continue;
     const peer = state.clients.get(peerId);
-    if (peer) { send(peer.ws, 'chat:typing', typingPayload); notified.add(peer.id); }
+    if (peer) {
+      send(peer.ws, 'chat:typing', typingPayload);
+      notified.add(peer.id);
+    }
   }
   for (const peer of state.clients.values()) {
     if (!notified.has(peer.id) && peer.id !== client.id && peer.chatSubscriptions.has(channelId)) {
@@ -1018,7 +1056,7 @@ export function handleFileList(client, data, msgId) {
     limit: Math.min(limit || 50, 200),
   });
 
-  const files = rows.map(r => ({
+  const files = rows.map((r) => ({
     id: r.id,
     channelId: r.channel_id,
     nickname: r.nickname,
@@ -1123,7 +1161,7 @@ export function handleChatSearch(client, data, msgId) {
 
   const badgeCache = new Map();
   const colorCache = new Map();
-  const messages = rows.map(r => {
+  const messages = rows.map((r) => {
     const userId = r.user_id || null;
     let badge;
     let roleColor = null;

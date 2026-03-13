@@ -22,20 +22,24 @@ db.exec(schema);
 
 const count = db.prepare('SELECT COUNT(*) as c FROM channels').get();
 if (count.c === 0) {
-  db.prepare(
-    `INSERT INTO channels (id, name, is_default, sort_order) VALUES ('lobby', 'Lobby', 1, 0)`
-  ).run();
+  db.prepare(`INSERT INTO channels (id, name, is_default, sort_order) VALUES ('lobby', 'Lobby', 1, 0)`).run();
   logger.info('Created default Lobby channel.');
 }
 
-try { db.prepare('SELECT badge FROM roles LIMIT 0').get(); } catch {
-  db.exec("ALTER TABLE roles ADD COLUMN badge TEXT");
+try {
+  db.prepare('SELECT badge FROM roles LIMIT 0').get();
+} catch {
+  db.exec('ALTER TABLE roles ADD COLUMN badge TEXT');
 }
-try { db.prepare('SELECT badge FROM messages LIMIT 0').get(); } catch {
-  db.exec("ALTER TABLE messages ADD COLUMN badge TEXT");
+try {
+  db.prepare('SELECT badge FROM messages LIMIT 0').get();
+} catch {
+  db.exec('ALTER TABLE messages ADD COLUMN badge TEXT');
 }
-try { db.prepare('SELECT position FROM roles LIMIT 0').get(); } catch {
-  db.exec("ALTER TABLE roles ADD COLUMN position INTEGER NOT NULL DEFAULT 0");
+try {
+  db.prepare('SELECT position FROM roles LIMIT 0').get();
+} catch {
+  db.exec('ALTER TABLE roles ADD COLUMN position INTEGER NOT NULL DEFAULT 0');
 }
 
 db.prepare("INSERT OR IGNORE INTO roles (id, name, badge, position) VALUES ('admin', 'Admin', 'Admin', 0)").run();
@@ -45,16 +49,24 @@ for (const perm of ALL_PERMISSIONS) {
   db.prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission) VALUES ('admin', ?)").run(perm);
 }
 
-try { db.prepare('SELECT link_previews FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT link_previews FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN link_previews TEXT');
 }
-try { db.prepare('SELECT client_id FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT client_id FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN client_id TEXT');
 }
-try { db.prepare('SELECT user_id FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT user_id FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN user_id TEXT');
 }
-try { db.prepare('SELECT user_id FROM files LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT user_id FROM files LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE files ADD COLUMN user_id TEXT');
 }
 try {
@@ -65,46 +77,74 @@ try {
   db.prepare('SELECT from_nickname FROM dm_messages LIMIT 0').get();
   db.exec('ALTER TABLE dm_messages DROP COLUMN from_nickname');
 } catch {}
-try { db.prepare('SELECT moderated FROM channels LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT moderated FROM channels LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE channels ADD COLUMN moderated INTEGER NOT NULL DEFAULT 0');
 }
-try { db.prepare('SELECT type FROM channels LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT type FROM channels LIMIT 0').get();
+} catch {
   db.exec("ALTER TABLE channels ADD COLUMN type TEXT NOT NULL DEFAULT 'channel'");
 }
-try { db.prepare('SELECT expires_at FROM admin_tokens LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT expires_at FROM admin_tokens LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE admin_tokens ADD COLUMN expires_at INTEGER');
 }
-try { db.prepare('SELECT edited_at FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT edited_at FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN edited_at INTEGER');
 }
-try { db.prepare('SELECT is_temporary FROM channels LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT is_temporary FROM channels LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE channels ADD COLUMN is_temporary INTEGER NOT NULL DEFAULT 0');
 }
-try { db.prepare('SELECT user_id FROM bans LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT user_id FROM bans LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE bans ADD COLUMN user_id TEXT');
 }
-try { db.prepare('SELECT type FROM server_messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT type FROM server_messages LIMIT 0').get();
+} catch {
   db.exec("ALTER TABLE server_messages ADD COLUMN type TEXT NOT NULL DEFAULT 'message'");
 }
-try { db.prepare('SELECT reply_to FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT reply_to FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN reply_to TEXT');
 }
-try { db.prepare('SELECT reply_to_nickname FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT reply_to_nickname FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN reply_to_nickname TEXT');
 }
-try { db.prepare('SELECT reply_to_user_id FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT reply_to_user_id FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN reply_to_user_id TEXT');
 }
-try { db.prepare('SELECT reply_to_content FROM messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT reply_to_content FROM messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE messages ADD COLUMN reply_to_content TEXT');
 }
-try { db.prepare('SELECT last_seen_at FROM identities LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT last_seen_at FROM identities LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE identities ADD COLUMN last_seen_at INTEGER');
 }
-try { db.prepare('SELECT reply_to FROM server_messages LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT reply_to FROM server_messages LIMIT 0').get();
+} catch {
   db.exec('ALTER TABLE server_messages ADD COLUMN reply_to TEXT');
 }
-try { db.prepare('SELECT channel_id FROM channel_read_roles LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT channel_id FROM channel_read_roles LIMIT 0').get();
+} catch {
   db.exec(`
     CREATE TABLE IF NOT EXISTS channel_read_roles (
       channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
@@ -113,7 +153,9 @@ try { db.prepare('SELECT channel_id FROM channel_read_roles LIMIT 0').get(); } c
     );
   `);
 }
-try { db.prepare('SELECT channel_id FROM channel_write_roles LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT channel_id FROM channel_write_roles LIMIT 0').get();
+} catch {
   db.exec(`
     CREATE TABLE IF NOT EXISTS channel_write_roles (
       channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
@@ -122,7 +164,9 @@ try { db.prepare('SELECT channel_id FROM channel_write_roles LIMIT 0').get(); } 
     );
   `);
 }
-try { db.prepare('SELECT channel_id FROM channel_visibility_roles LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT channel_id FROM channel_visibility_roles LIMIT 0').get();
+} catch {
   db.exec(`
     CREATE TABLE IF NOT EXISTS channel_visibility_roles (
       channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
@@ -131,7 +175,9 @@ try { db.prepare('SELECT channel_id FROM channel_visibility_roles LIMIT 0').get(
     );
   `);
 }
-try { db.prepare('SELECT id FROM reactions LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT id FROM reactions LIMIT 0').get();
+} catch {
   db.exec(`
     CREATE TABLE IF NOT EXISTS reactions (
       id         TEXT PRIMARY KEY,
@@ -144,7 +190,9 @@ try { db.prepare('SELECT id FROM reactions LIMIT 0').get(); } catch {
     CREATE INDEX IF NOT EXISTS idx_reactions_message ON reactions(message_id);
   `);
 }
-try { db.prepare('SELECT key FROM server_config LIMIT 0').get(); } catch {
+try {
+  db.prepare('SELECT key FROM server_config LIMIT 0').get();
+} catch {
   db.exec(`
     CREATE TABLE IF NOT EXISTS server_config (
       key   TEXT PRIMARY KEY,
@@ -152,7 +200,6 @@ try { db.prepare('SELECT key FROM server_config LIMIT 0').get(); } catch {
     );
   `);
 }
-
 
 /**
  * Returns all channels ordered by parent and sort order.
@@ -186,7 +233,7 @@ export function getDefaultChannel() {
 export function insertChannel(channel) {
   db.prepare(
     `INSERT INTO channels (id, name, parent_id, password, max_users, description, is_default, sort_order, moderated, type, is_temporary)
-     VALUES (@id, @name, @parentId, @password, @maxUsers, @description, @isDefault, @sortOrder, @moderated, @type, @isTemporary)`
+     VALUES (@id, @name, @parentId, @password, @maxUsers, @description, @isDefault, @sortOrder, @moderated, @type, @isTemporary)`,
   ).run({
     id: channel.id,
     name: channel.name,
@@ -210,15 +257,42 @@ export function insertChannel(channel) {
 export function updateChannel(id, props) {
   const sets = [];
   const params = { id };
-  if (props.name !== undefined) { sets.push('name = @name'); params.name = props.name; }
-  if (props.password !== undefined) { sets.push('password = @password'); params.password = props.password; }
-  if (props.maxUsers !== undefined) { sets.push('max_users = @maxUsers'); params.maxUsers = props.maxUsers; }
-  if (props.description !== undefined) { sets.push('description = @description'); params.description = props.description; }
-  if (props.parentId !== undefined) { sets.push('parent_id = @parentId'); params.parentId = props.parentId; }
-  if (props.sortOrder !== undefined) { sets.push('sort_order = @sortOrder'); params.sortOrder = props.sortOrder; }
-  if (props.moderated !== undefined) { sets.push('moderated = @moderated'); params.moderated = props.moderated ? 1 : 0; }
-  if (props.type !== undefined) { sets.push('type = @type'); params.type = props.type; }
-  if (props.isDefault !== undefined) { sets.push('is_default = @isDefault'); params.isDefault = props.isDefault ? 1 : 0; }
+  if (props.name !== undefined) {
+    sets.push('name = @name');
+    params.name = props.name;
+  }
+  if (props.password !== undefined) {
+    sets.push('password = @password');
+    params.password = props.password;
+  }
+  if (props.maxUsers !== undefined) {
+    sets.push('max_users = @maxUsers');
+    params.maxUsers = props.maxUsers;
+  }
+  if (props.description !== undefined) {
+    sets.push('description = @description');
+    params.description = props.description;
+  }
+  if (props.parentId !== undefined) {
+    sets.push('parent_id = @parentId');
+    params.parentId = props.parentId;
+  }
+  if (props.sortOrder !== undefined) {
+    sets.push('sort_order = @sortOrder');
+    params.sortOrder = props.sortOrder;
+  }
+  if (props.moderated !== undefined) {
+    sets.push('moderated = @moderated');
+    params.moderated = props.moderated ? 1 : 0;
+  }
+  if (props.type !== undefined) {
+    sets.push('type = @type');
+    params.type = props.type;
+  }
+  if (props.isDefault !== undefined) {
+    sets.push('is_default = @isDefault');
+    params.isDefault = props.isDefault ? 1 : 0;
+  }
   if (sets.length === 0) return;
   db.prepare(`UPDATE channels SET ${sets.join(', ')} WHERE id = @id`).run(params);
 }
@@ -238,9 +312,7 @@ export function deleteChannel(id) {
  */
 export function isBanned(ip) {
   const now = Date.now();
-  return !!db.prepare(
-    'SELECT 1 FROM bans WHERE ip = ? AND (expires_at IS NULL OR expires_at > ?)'
-  ).get(ip, now);
+  return !!db.prepare('SELECT 1 FROM bans WHERE ip = ? AND (expires_at IS NULL OR expires_at > ?)').get(ip, now);
 }
 
 /**
@@ -266,7 +338,7 @@ export function deleteBan(banId) {
 export function addBan(ban) {
   db.prepare(
     `INSERT INTO bans (id, ip, user_id, reason, created_at, expires_at, nickname)
-     VALUES (@id, @ip, @userId, @reason, @createdAt, @expiresAt, @nickname)`
+     VALUES (@id, @ip, @userId, @reason, @createdAt, @expiresAt, @nickname)`,
   ).run({
     id: ban.id,
     ip: ban.ip ?? null,
@@ -286,9 +358,7 @@ export function addBan(ban) {
 export function isBannedByUserId(userId) {
   if (!userId) return false;
   const now = Date.now();
-  return !!db.prepare(
-    'SELECT 1 FROM bans WHERE user_id = ? AND (expires_at IS NULL OR expires_at > ?)'
-  ).get(userId, now);
+  return !!db.prepare('SELECT 1 FROM bans WHERE user_id = ? AND (expires_at IS NULL OR expires_at > ?)').get(userId, now);
 }
 
 /**
@@ -298,7 +368,7 @@ export function isBannedByUserId(userId) {
 export function insertDmMessage(msg) {
   db.prepare(
     `INSERT INTO dm_messages (id, from_user_id, to_user_id, content, created_at)
-     VALUES (@id, @fromUserId, @toUserId, @content, @createdAt)`
+     VALUES (@id, @fromUserId, @toUserId, @content, @createdAt)`,
   ).run({
     id: msg.id,
     fromUserId: msg.fromUserId,
@@ -336,9 +406,7 @@ export function getDmMessages(userIdA, userIdB, { before, limit = 50 } = {}) {
     ORDER BY created_at DESC
     LIMIT ?
   `;
-  const params = before
-    ? [userIdA, userIdB, userIdB, userIdA, before, limit]
-    : [userIdA, userIdB, userIdB, userIdA, limit];
+  const params = before ? [userIdA, userIdB, userIdB, userIdA, before, limit] : [userIdA, userIdB, userIdB, userIdA, limit];
   return db.prepare(q).all(...params);
 }
 
@@ -358,7 +426,7 @@ export function findIdentityByFingerprint(fingerprint) {
 export function insertIdentity(identity) {
   db.prepare(
     `INSERT INTO identities (user_id, public_key, fingerprint, name, created_at)
-     VALUES (@userId, @publicKey, @fingerprint, @name, @createdAt)`
+     VALUES (@userId, @publicKey, @fingerprint, @name, @createdAt)`,
   ).run({
     userId: identity.userId,
     publicKey: identity.publicKey,
@@ -409,9 +477,7 @@ export function deleteIdentity(userId) {
  * @returns {string|null}
  */
 export function getNicknameOwner(nickname) {
-  const row = db.prepare(
-    'SELECT user_id FROM nickname_registrations WHERE nickname = ? COLLATE NOCASE'
-  ).get(nickname);
+  const row = db.prepare('SELECT user_id FROM nickname_registrations WHERE nickname = ? COLLATE NOCASE').get(nickname);
   return row ? row.user_id : null;
 }
 
@@ -421,9 +487,7 @@ export function getNicknameOwner(nickname) {
  * @param {string} nickname
  */
 export function registerNickname(userId, nickname) {
-  db.prepare(
-    'INSERT OR IGNORE INTO nickname_registrations (user_id, nickname, registered_at) VALUES (?, ?, ?)'
-  ).run(userId, nickname, Date.now());
+  db.prepare('INSERT OR IGNORE INTO nickname_registrations (user_id, nickname, registered_at) VALUES (?, ?, ?)').run(userId, nickname, Date.now());
 }
 
 /**
@@ -432,9 +496,10 @@ export function registerNickname(userId, nickname) {
  * @returns {string[]}
  */
 export function getRegisteredNicknames(userId) {
-  return db.prepare(
-    'SELECT nickname FROM nickname_registrations WHERE user_id = ?'
-  ).all(userId).map(r => r.nickname);
+  return db
+    .prepare('SELECT nickname FROM nickname_registrations WHERE user_id = ?')
+    .all(userId)
+    .map((r) => r.nickname);
 }
 
 /**
@@ -444,9 +509,7 @@ export function getRegisteredNicknames(userId) {
  * @returns {boolean}
  */
 export function deleteNicknameRegistration(userId, nickname) {
-  const result = db.prepare(
-    'DELETE FROM nickname_registrations WHERE user_id = ? AND nickname = ? COLLATE NOCASE'
-  ).run(userId, nickname);
+  const result = db.prepare('DELETE FROM nickname_registrations WHERE user_id = ? AND nickname = ? COLLATE NOCASE').run(userId, nickname);
   return result.changes > 0;
 }
 
@@ -473,7 +536,7 @@ export function deleteUserDmMessages(userId) {
 export function insertServerMessage(msg) {
   db.prepare(
     `INSERT INTO server_messages (id, type, user_id, client_id, badge, content, reply_to, created_at)
-     VALUES (@id, @type, @userId, @clientId, @badge, @content, @replyTo, @createdAt)`
+     VALUES (@id, @type, @userId, @clientId, @badge, @content, @replyTo, @createdAt)`,
   ).run({
     id: msg.id,
     type: msg.type ?? 'message',
@@ -512,14 +575,14 @@ export function deleteServerMessage(id) {
  */
 export function getServerMessages({ before, limit = 50 } = {}) {
   if (before) {
-    return db.prepare(
-      `SELECT * FROM server_messages WHERE created_at < ?
-       ORDER BY created_at DESC LIMIT ?`
-    ).all(before, limit);
+    return db
+      .prepare(
+        `SELECT * FROM server_messages WHERE created_at < ?
+       ORDER BY created_at DESC LIMIT ?`,
+      )
+      .all(before, limit);
   }
-  return db.prepare(
-    `SELECT * FROM server_messages ORDER BY created_at DESC LIMIT ?`
-  ).all(limit);
+  return db.prepare(`SELECT * FROM server_messages ORDER BY created_at DESC LIMIT ?`).all(limit);
 }
 
 /**
@@ -529,7 +592,7 @@ export function getServerMessages({ before, limit = 50 } = {}) {
 export function insertMessage(msg) {
   db.prepare(
     `INSERT INTO messages (id, channel_id, client_id, user_id, badge, content, reply_to, reply_to_nickname, reply_to_user_id, reply_to_content, created_at)
-     VALUES (@id, @channelId, @clientId, @userId, @badge, @content, @replyTo, @replyToNickname, @replyToUserId, @replyToContent, @createdAt)`
+     VALUES (@id, @channelId, @clientId, @userId, @badge, @content, @replyTo, @replyToNickname, @replyToUserId, @replyToContent, @createdAt)`,
   ).run({
     id: msg.id,
     channelId: msg.channelId,
@@ -555,15 +618,19 @@ export function insertMessage(msg) {
  */
 export function getMessages(channelId, { before, limit = 50 } = {}) {
   if (before) {
-    return db.prepare(
-      `SELECT * FROM messages WHERE channel_id = ? AND created_at < ?
-       ORDER BY created_at DESC LIMIT ?`
-    ).all(channelId, before, limit);
+    return db
+      .prepare(
+        `SELECT * FROM messages WHERE channel_id = ? AND created_at < ?
+       ORDER BY created_at DESC LIMIT ?`,
+      )
+      .all(channelId, before, limit);
   }
-  return db.prepare(
-    `SELECT * FROM messages WHERE channel_id = ?
-     ORDER BY created_at DESC LIMIT ?`
-  ).all(channelId, limit);
+  return db
+    .prepare(
+      `SELECT * FROM messages WHERE channel_id = ?
+     ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(channelId, limit);
 }
 
 /**
@@ -574,14 +641,18 @@ export function getMessages(channelId, { before, limit = 50 } = {}) {
  * @returns {object[]}
  */
 export function getMessagesAround(channelId, timestamp, halfLimit = 25) {
-  const before = db.prepare(
-    `SELECT * FROM messages WHERE channel_id = ? AND created_at <= ?
-     ORDER BY created_at DESC LIMIT ?`
-  ).all(channelId, timestamp, halfLimit);
-  const after = db.prepare(
-    `SELECT * FROM messages WHERE channel_id = ? AND created_at > ?
-     ORDER BY created_at ASC LIMIT ?`
-  ).all(channelId, timestamp, halfLimit);
+  const before = db
+    .prepare(
+      `SELECT * FROM messages WHERE channel_id = ? AND created_at <= ?
+     ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(channelId, timestamp, halfLimit);
+  const after = db
+    .prepare(
+      `SELECT * FROM messages WHERE channel_id = ? AND created_at > ?
+     ORDER BY created_at ASC LIMIT ?`,
+    )
+    .all(channelId, timestamp, halfLimit);
   const all = [...before.reverse(), ...after];
   return all;
 }
@@ -594,10 +665,12 @@ export function getMessagesAround(channelId, timestamp, halfLimit = 25) {
  * @returns {object[]}
  */
 export function searchMessages(channelId, query, { limit = 50 } = {}) {
-  return db.prepare(
-    `SELECT * FROM messages WHERE channel_id = ? AND content LIKE ?
-     ORDER BY created_at DESC LIMIT ?`
-  ).all(channelId, `%${query}%`, limit);
+  return db
+    .prepare(
+      `SELECT * FROM messages WHERE channel_id = ? AND content LIKE ?
+     ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(channelId, `%${query}%`, limit);
 }
 
 /**
@@ -605,9 +678,7 @@ export function searchMessages(channelId, query, { limit = 50 } = {}) {
  * @returns {Map<string, number>}
  */
 export function getLastMessageTimestamps() {
-  const rows = db.prepare(
-    `SELECT channel_id, MAX(created_at) AS last_message_at FROM messages GROUP BY channel_id`
-  ).all();
+  const rows = db.prepare(`SELECT channel_id, MAX(created_at) AS last_message_at FROM messages GROUP BY channel_id`).all();
   const map = new Map();
   for (const row of rows) map.set(row.channel_id, row.last_message_at);
   return map;
@@ -619,8 +690,7 @@ export function getLastMessageTimestamps() {
  * @param {object[]} previews
  */
 export function updateMessagePreviews(messageId, previews) {
-  db.prepare('UPDATE messages SET link_previews = ? WHERE id = ?')
-    .run(JSON.stringify(previews), messageId);
+  db.prepare('UPDATE messages SET link_previews = ? WHERE id = ?').run(JSON.stringify(previews), messageId);
 }
 
 /**
@@ -647,8 +717,7 @@ export function getMessage(messageId) {
  * @param {number} editedAt
  */
 export function updateMessage(messageId, newContent, editedAt) {
-  db.prepare('UPDATE messages SET content = ?, edited_at = ? WHERE id = ?')
-    .run(newContent, editedAt, messageId);
+  db.prepare('UPDATE messages SET content = ?, edited_at = ? WHERE id = ?').run(newContent, editedAt, messageId);
 }
 
 /**
@@ -705,14 +774,14 @@ export function deleteMessagesByUser(clientId, userId) {
  * @param {number} maxCount
  */
 export function pruneMessages(channelId, maxCount) {
-  const cutoff = db.prepare(
-    `SELECT created_at FROM messages WHERE channel_id = ?
-     ORDER BY created_at DESC LIMIT 1 OFFSET ?`
-  ).get(channelId, maxCount);
+  const cutoff = db
+    .prepare(
+      `SELECT created_at FROM messages WHERE channel_id = ?
+     ORDER BY created_at DESC LIMIT 1 OFFSET ?`,
+    )
+    .get(channelId, maxCount);
   if (cutoff) {
-    db.prepare(
-      'DELETE FROM messages WHERE channel_id = ? AND created_at < ?'
-    ).run(channelId, cutoff.created_at);
+    db.prepare('DELETE FROM messages WHERE channel_id = ? AND created_at < ?').run(channelId, cutoff.created_at);
   }
 }
 
@@ -723,7 +792,7 @@ export function pruneMessages(channelId, maxCount) {
 export function insertFile(file) {
   db.prepare(
     `INSERT INTO files (id, channel_id, client_id, user_id, nickname, filename, size, mime_type, created_at)
-     VALUES (@id, @channelId, @clientId, @userId, @nickname, @filename, @size, @mimeType, @createdAt)`
+     VALUES (@id, @channelId, @clientId, @userId, @nickname, @filename, @size, @mimeType, @createdAt)`,
   ).run({
     id: file.id,
     channelId: file.channelId,
@@ -756,15 +825,19 @@ export function getFile(id) {
  */
 export function getChannelFiles(channelId, { before, limit = 50 } = {}) {
   if (before) {
-    return db.prepare(
-      `SELECT * FROM files WHERE channel_id = ? AND created_at < ?
-       ORDER BY created_at DESC LIMIT ?`
-    ).all(channelId, before, limit);
+    return db
+      .prepare(
+        `SELECT * FROM files WHERE channel_id = ? AND created_at < ?
+       ORDER BY created_at DESC LIMIT ?`,
+      )
+      .all(channelId, before, limit);
   }
-  return db.prepare(
-    `SELECT * FROM files WHERE channel_id = ?
-     ORDER BY created_at DESC LIMIT ?`
-  ).all(channelId, limit);
+  return db
+    .prepare(
+      `SELECT * FROM files WHERE channel_id = ?
+     ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(channelId, limit);
 }
 
 /**
@@ -781,7 +854,10 @@ export function deleteFile(id) {
  * @returns {string[]}
  */
 export function getChannelFileIds(channelId) {
-  return db.prepare('SELECT id FROM files WHERE channel_id = ?').all(channelId).map(r => r.id);
+  return db
+    .prepare('SELECT id FROM files WHERE channel_id = ?')
+    .all(channelId)
+    .map((r) => r.id);
 }
 
 /**
@@ -790,7 +866,7 @@ export function getChannelFileIds(channelId) {
  * @returns {object|undefined}
  */
 export function getMessageByFileId(fileId) {
-  return db.prepare("SELECT * FROM messages WHERE content LIKE ?").get(`%"fileId":"${fileId}"%`);
+  return db.prepare('SELECT * FROM messages WHERE content LIKE ?').get(`%"fileId":"${fileId}"%`);
 }
 
 /**
@@ -814,9 +890,7 @@ export function hasAdminUsers() {
  * @param {object} token
  */
 export function insertAdminToken(token) {
-  db.prepare(
-    `INSERT INTO admin_tokens (token, role, created_at, expires_at) VALUES (@token, @role, @createdAt, @expiresAt)`
-  ).run({
+  db.prepare(`INSERT INTO admin_tokens (token, role, created_at, expires_at) VALUES (@token, @role, @createdAt, @expiresAt)`).run({
     token: token.token,
     role: token.role || 'admin',
     createdAt: token.createdAt || Date.now(),
@@ -829,9 +903,7 @@ export function insertAdminToken(token) {
  * @returns {import('better-sqlite3').RunResult}
  */
 export function deleteExpiredTokens() {
-  return db.prepare(
-    'DELETE FROM admin_tokens WHERE expires_at IS NOT NULL AND expires_at < ? AND redeemed_at IS NULL'
-  ).run(Date.now());
+  return db.prepare('DELETE FROM admin_tokens WHERE expires_at IS NOT NULL AND expires_at < ? AND redeemed_at IS NULL').run(Date.now());
 }
 
 /**
@@ -849,9 +921,7 @@ export function getAdminToken(token) {
  * @param {string} userId
  */
 export function redeemAdminToken(token, userId) {
-  db.prepare(
-    'UPDATE admin_tokens SET user_id = ?, redeemed_at = ? WHERE token = ?'
-  ).run(userId, Date.now(), token);
+  db.prepare('UPDATE admin_tokens SET user_id = ?, redeemed_at = ? WHERE token = ?').run(userId, Date.now(), token);
 }
 
 /**
@@ -860,12 +930,16 @@ export function redeemAdminToken(token, userId) {
  * @returns {Set<string>}
  */
 export function getUserPermissions(userId) {
-  const rows = db.prepare(`
+  const rows = db
+    .prepare(
+      `
     SELECT rp.permission FROM role_permissions rp
     JOIN user_roles ur ON ur.role_id = rp.role_id
     WHERE ur.user_id = ?
-  `).all(userId);
-  return new Set(rows.map(r => r.permission));
+  `,
+    )
+    .all(userId);
+  return new Set(rows.map((r) => r.permission));
 }
 
 /**
@@ -874,13 +948,17 @@ export function getUserPermissions(userId) {
  * @returns {string|null}
  */
 export function getUserBadge(userId) {
-  const row = db.prepare(`
+  const row = db
+    .prepare(
+      `
     SELECT r.badge FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ? AND r.badge IS NOT NULL
     ORDER BY r.position
     LIMIT 1
-  `).get(userId);
+  `,
+    )
+    .get(userId);
   return row ? row.badge : null;
 }
 
@@ -890,13 +968,17 @@ export function getUserBadge(userId) {
  * @returns {string|null}
  */
 export function getUserRoleColor(userId) {
-  const row = db.prepare(`
+  const row = db
+    .prepare(
+      `
     SELECT r.color FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ? AND r.color IS NOT NULL
     ORDER BY r.position
     LIMIT 1
-  `).get(userId);
+  `,
+    )
+    .get(userId);
   return row ? row.color : null;
 }
 
@@ -906,9 +988,7 @@ export function getUserRoleColor(userId) {
  * @param {string} roleId
  */
 export function assignRole(userId, roleId) {
-  db.prepare(
-    "INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)"
-  ).run(userId, roleId);
+  db.prepare('INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)').run(userId, roleId);
 }
 
 /**
@@ -917,7 +997,7 @@ export function assignRole(userId, roleId) {
  * @param {string} roleId
  */
 export function removeRole(userId, roleId) {
-  db.prepare("DELETE FROM user_roles WHERE user_id = ? AND role_id = ?").run(userId, roleId);
+  db.prepare('DELETE FROM user_roles WHERE user_id = ? AND role_id = ?').run(userId, roleId);
 }
 
 /**
@@ -926,12 +1006,16 @@ export function removeRole(userId, roleId) {
  * @returns {Array<{id: string, name: string, badge: string|null}>}
  */
 export function getUserRoles(userId) {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT r.id, r.name, r.badge, r.color, r.position FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ?
     ORDER BY r.position
-  `).all(userId);
+  `,
+    )
+    .all(userId);
 }
 
 /**
@@ -948,12 +1032,16 @@ export function getRoles() {
  * @returns {Array<{user_id: string, name: string, fingerprint: string}>}
  */
 export function getRoleMembers(roleId) {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT i.user_id, i.name, i.fingerprint FROM identities i
     JOIN user_roles ur ON ur.user_id = i.user_id
     WHERE ur.role_id = ?
     ORDER BY i.name
-  `).all(roleId);
+  `,
+    )
+    .all(roleId);
 }
 
 /**
@@ -967,11 +1055,15 @@ export function getRoleMembers(roleId) {
  * @returns {number}
  */
 export function getUserHighestRolePosition(userId) {
-  const row = db.prepare(`
+  const row = db
+    .prepare(
+      `
     SELECT MIN(r.position) AS pos FROM roles r
     JOIN user_roles ur ON ur.role_id = r.id
     WHERE ur.user_id = ?
-  `).get(userId);
+  `,
+    )
+    .get(userId);
   return row?.pos ?? Infinity;
 }
 
@@ -1008,9 +1100,13 @@ export function getNextRolePosition() {
 }
 
 export function createRole(role) {
-  db.prepare(
-    "INSERT INTO roles (id, name, badge, color, position) VALUES (@id, @name, @badge, @color, @position)"
-  ).run({ id: role.id, name: role.name, badge: role.badge ?? null, color: role.color ?? null, position: role.position ?? 0 });
+  db.prepare('INSERT INTO roles (id, name, badge, color, position) VALUES (@id, @name, @badge, @color, @position)').run({
+    id: role.id,
+    name: role.name,
+    badge: role.badge ?? null,
+    color: role.color ?? null,
+    position: role.position ?? 0,
+  });
 }
 
 /**
@@ -1021,9 +1117,18 @@ export function createRole(role) {
 export function updateRole(id, props) {
   const sets = [];
   const params = { id };
-  if (props.name !== undefined) { sets.push('name = @name'); params.name = props.name; }
-  if (props.badge !== undefined) { sets.push('badge = @badge'); params.badge = props.badge; }
-  if (props.color !== undefined) { sets.push('color = @color'); params.color = props.color; }
+  if (props.name !== undefined) {
+    sets.push('name = @name');
+    params.name = props.name;
+  }
+  if (props.badge !== undefined) {
+    sets.push('badge = @badge');
+    params.badge = props.badge;
+  }
+  if (props.color !== undefined) {
+    sets.push('color = @color');
+    params.color = props.color;
+  }
   if (sets.length === 0) return;
   db.prepare(`UPDATE roles SET ${sets.join(', ')} WHERE id = @id`).run(params);
 }
@@ -1042,7 +1147,10 @@ export function deleteRole(id) {
  * @returns {string[]}
  */
 export function getRolePermissions(roleId) {
-  return db.prepare('SELECT permission FROM role_permissions WHERE role_id = ?').all(roleId).map(r => r.permission);
+  return db
+    .prepare('SELECT permission FROM role_permissions WHERE role_id = ?')
+    .all(roleId)
+    .map((r) => r.permission);
 }
 
 /**
@@ -1067,7 +1175,10 @@ export function setRolePermissions(roleId, permissions) {
  * @returns {string[]}
  */
 export function getChannelAllowedRoles(channelId) {
-  return db.prepare('SELECT role_id FROM channel_allowed_roles WHERE channel_id = ?').all(channelId).map(r => r.role_id);
+  return db
+    .prepare('SELECT role_id FROM channel_allowed_roles WHERE channel_id = ?')
+    .all(channelId)
+    .map((r) => r.role_id);
 }
 
 /**
@@ -1105,9 +1216,9 @@ export function getAllChannelAllowedRoles() {
  * @returns {object[]}
  */
 export function listAdminTokens() {
-  return db.prepare(
-    'SELECT token, role, created_at, redeemed_at, expires_at FROM admin_tokens WHERE redeemed_at IS NULL AND (expires_at IS NULL OR expires_at > ?) ORDER BY created_at DESC'
-  ).all(Date.now());
+  return db
+    .prepare('SELECT token, role, created_at, redeemed_at, expires_at FROM admin_tokens WHERE redeemed_at IS NULL AND (expires_at IS NULL OR expires_at > ?) ORDER BY created_at DESC')
+    .all(Date.now());
 }
 
 /**
@@ -1125,7 +1236,10 @@ export function deleteAdminToken(token) {
  * @returns {string[]}
  */
 export function getChannelReadRoles(channelId) {
-  return db.prepare('SELECT role_id FROM channel_read_roles WHERE channel_id = ?').all(channelId).map(r => r.role_id);
+  return db
+    .prepare('SELECT role_id FROM channel_read_roles WHERE channel_id = ?')
+    .all(channelId)
+    .map((r) => r.role_id);
 }
 
 /**
@@ -1164,7 +1278,10 @@ export function getAllChannelReadRoles() {
  * @returns {string[]}
  */
 export function getChannelWriteRoles(channelId) {
-  return db.prepare('SELECT role_id FROM channel_write_roles WHERE channel_id = ?').all(channelId).map(r => r.role_id);
+  return db
+    .prepare('SELECT role_id FROM channel_write_roles WHERE channel_id = ?')
+    .all(channelId)
+    .map((r) => r.role_id);
 }
 
 /**
@@ -1236,7 +1353,7 @@ export function addReaction(reaction) {
   try {
     db.prepare(
       `INSERT INTO reactions (id, message_id, user_id, emoji, created_at)
-       VALUES (@id, @messageId, @userId, @emoji, @createdAt)`
+       VALUES (@id, @messageId, @userId, @emoji, @createdAt)`,
     ).run({
       id: reaction.id,
       messageId: reaction.messageId,
@@ -1257,8 +1374,7 @@ export function addReaction(reaction) {
  * @param {string} emoji
  */
 export function removeReaction(messageId, userId, emoji) {
-  db.prepare('DELETE FROM reactions WHERE message_id = ? AND user_id = ? AND emoji = ?')
-    .run(messageId, userId, emoji);
+  db.prepare('DELETE FROM reactions WHERE message_id = ? AND user_id = ? AND emoji = ?').run(messageId, userId, emoji);
 }
 
 /**
@@ -1267,8 +1383,7 @@ export function removeReaction(messageId, userId, emoji) {
  * @returns {object[]}
  */
 export function getReactions(messageId) {
-  return db.prepare('SELECT * FROM reactions WHERE message_id = ? ORDER BY created_at')
-    .all(messageId);
+  return db.prepare('SELECT * FROM reactions WHERE message_id = ? ORDER BY created_at').all(messageId);
 }
 
 /**
@@ -1282,7 +1397,7 @@ export function pinMessage(messageId, channelId, pinnedByUserId) {
   try {
     db.prepare(
       `INSERT OR REPLACE INTO pinned_messages (message_id, channel_id, pinned_by_user_id, pinned_at)
-       VALUES (?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?)`,
     ).run(messageId, channelId, pinnedByUserId, Date.now());
     return true;
   } catch {
@@ -1296,8 +1411,7 @@ export function pinMessage(messageId, channelId, pinnedByUserId) {
  * @param {string} channelId
  */
 export function unpinMessage(messageId, channelId) {
-  db.prepare('DELETE FROM pinned_messages WHERE message_id = ? AND channel_id = ?')
-    .run(messageId, channelId);
+  db.prepare('DELETE FROM pinned_messages WHERE message_id = ? AND channel_id = ?').run(messageId, channelId);
 }
 
 /**
@@ -1306,11 +1420,13 @@ export function unpinMessage(messageId, channelId) {
  * @returns {Array<{message_id: string, pinned_by_user_id: string, pinned_at: number}>}
  */
 export function getPinnedMessages(channelId) {
-  return db.prepare(
-    `SELECT p.message_id, p.pinned_by_user_id, p.pinned_at FROM pinned_messages p
+  return db
+    .prepare(
+      `SELECT p.message_id, p.pinned_by_user_id, p.pinned_at FROM pinned_messages p
      INNER JOIN messages m ON m.id = p.message_id
-     WHERE p.channel_id = ? ORDER BY p.pinned_at DESC`
-  ).all(channelId);
+     WHERE p.channel_id = ? ORDER BY p.pinned_at DESC`,
+    )
+    .all(channelId);
 }
 
 /**
@@ -1320,9 +1436,7 @@ export function getPinnedMessages(channelId) {
  * @returns {boolean}
  */
 export function isMessagePinned(messageId, channelId) {
-  const row = db.prepare(
-    'SELECT 1 FROM pinned_messages WHERE message_id = ? AND channel_id = ?'
-  ).get(messageId, channelId);
+  const row = db.prepare('SELECT 1 FROM pinned_messages WHERE message_id = ? AND channel_id = ?').get(messageId, channelId);
   return !!row;
 }
 
@@ -1364,9 +1478,7 @@ export function getConfigValue(key) {
  * @param {*} value
  */
 export function setConfigValue(key, value) {
-  db.prepare(
-    'INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)'
-  ).run(key, JSON.stringify(value));
+  db.prepare('INSERT OR REPLACE INTO server_config (key, value) VALUES (?, ?)').run(key, JSON.stringify(value));
 }
 
 /**
@@ -1394,7 +1506,7 @@ export function setConfigValues(entries) {
 export function logAuditEvent(action, actorUserId, actorNickname, targetUserId, targetNickname, details) {
   db.prepare(
     `INSERT INTO audit_log (id, action, actor_user_id, actor_nickname, target_user_id, target_nickname, details, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(randomUUID(), action, actorUserId || null, actorNickname || null, targetUserId || null, targetNickname || null, details || null, Date.now());
 }
 
@@ -1440,26 +1552,34 @@ export function getAnalyticsData() {
 
   const totalAuditEvents = db.prepare('SELECT COUNT(*) as c FROM audit_log').get().c;
 
-  const messagesPerChannel = db.prepare(
-    `SELECT c.name, COUNT(m.id) as count
+  const messagesPerChannel = db
+    .prepare(
+      `SELECT c.name, COUNT(m.id) as count
      FROM channels c LEFT JOIN messages m ON m.channel_id = c.id
-     GROUP BY c.id ORDER BY count DESC LIMIT 10`
-  ).all();
+     GROUP BY c.id ORDER BY count DESC LIMIT 10`,
+    )
+    .all();
 
-  const topUploaders = db.prepare(
-    `SELECT nickname, COUNT(*) as count, SUM(size) as totalSize
-     FROM files GROUP BY nickname ORDER BY totalSize DESC LIMIT 10`
-  ).all();
+  const topUploaders = db
+    .prepare(
+      `SELECT nickname, COUNT(*) as count, SUM(size) as totalSize
+     FROM files GROUP BY nickname ORDER BY totalSize DESC LIMIT 10`,
+    )
+    .all();
 
-  const messageActivity = db.prepare(
-    `SELECT (created_at / 3600000) * 3600000 as hour, COUNT(*) as count
-     FROM messages WHERE created_at > ? GROUP BY hour ORDER BY hour`
-  ).all(sevenDaysAgo);
+  const messageActivity = db
+    .prepare(
+      `SELECT (created_at / 3600000) * 3600000 as hour, COUNT(*) as count
+     FROM messages WHERE created_at > ? GROUP BY hour ORDER BY hour`,
+    )
+    .all(sevenDaysAgo);
 
-  const filesByType = db.prepare(
-    `SELECT mime_type, COUNT(*) as count, SUM(size) as totalSize
-     FROM files GROUP BY mime_type ORDER BY totalSize DESC LIMIT 10`
-  ).all();
+  const filesByType = db
+    .prepare(
+      `SELECT mime_type, COUNT(*) as count, SUM(size) as totalSize
+     FROM files GROUP BY mime_type ORDER BY totalSize DESC LIMIT 10`,
+    )
+    .all();
 
   const serverMessages = db.prepare('SELECT COUNT(*) as c FROM server_messages').get().c;
 

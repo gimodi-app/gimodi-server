@@ -21,6 +21,7 @@ On first start, an admin token is printed to the console. Use it in the client t
 Settings are stored in the SQLite database (`data/gimodi.db` in the `server_config` table). If a key is not set in the database, the default value is used. All settings can be overridden by environment variables.
 
 **Priority order** (highest wins):
+
 1. Environment variables
 2. Database values (set via the client's admin settings panel)
 3. Defaults
@@ -28,7 +29,7 @@ Settings are stored in the SQLite database (`data/gimodi.db` in the `server_conf
 ### Environment Variables
 
 | Environment Variable                    | Type    | Default           | Description                                                              |
-|-----------------------------------------|---------|-------------------|--------------------------------------------------------------------------|
+| --------------------------------------- | ------- | ----------------- | ------------------------------------------------------------------------ |
 | `GIMODI_NAME`                           | string  | `Gimodi Server`   | Server display name                                                      |
 | `GIMODI_PORT`                           | number  | `6833`            | HTTPS/WSS listen port                                                    |
 | `GIMODI_PASSWORD`                       | string  | `null`            | Server password (null = no password)                                     |
@@ -69,6 +70,7 @@ docker run -p 6833:6833 -p 40000:40000/udp \
 ## Data
 
 All persistent data is stored in `data/`:
+
 - `gimodi.db` -- SQLite database (channels, messages, identities, roles, config)
 - `uploads/` -- uploaded files
 - `cert.pem` / `key.pem` -- SSL certificate (auto-generated if missing)

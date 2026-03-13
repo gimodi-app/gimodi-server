@@ -3,8 +3,8 @@ services:
     image: gimodi/gimodi
     restart: unless-stopped
     ports:
-      - "6833:6833/tcp"
-      - "40000:40000/udp"
+      - '6833:6833/tcp'
+      - '40000:40000/udp'
     environment:
       - GIMODI_NAME=My Server
       - GIMODI_MEDIA_ANNOUNCED_IP=YOUR_IP_HERE

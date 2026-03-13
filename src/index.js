@@ -54,7 +54,7 @@ async function main() {
 
   const sslCert = await loadOrGenerateCert();
 
-  const server = httpServer = createServer({ cert: sslCert.cert, key: sslCert.key }, (req, res) => {
+  const server = (httpServer = createServer({ cert: sslCert.cert, key: sslCert.key }, (req, res) => {
     setCors(res);
 
     if (req.method === 'OPTIONS') {
@@ -77,12 +77,14 @@ async function main() {
 
     if (req.url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        name: config.name,
-        clients: state.clients.size,
-        channels: state.channels.size,
-        iconHash: config.icon?.hash || null,
-      }));
+      res.end(
+        JSON.stringify({
+          name: config.name,
+          clients: state.clients.size,
+          channels: state.channels.size,
+          iconHash: config.icon?.hash || null,
+        }),
+      );
       return;
     }
 
@@ -114,7 +116,7 @@ async function main() {
 
     res.writeHead(404);
     res.end();
-  });
+  }));
 
   initWebSocket(server);
 
@@ -135,7 +137,7 @@ async function shutdown(signal) {
   closeWebSocket('Server is shutting down.');
 
   if (httpServer) {
-    await new Promise(resolve => httpServer.close(resolve));
+    await new Promise((resolve) => httpServer.close(resolve));
   }
 
   closeWorkers();
@@ -145,9 +147,9 @@ async function shutdown(signal) {
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT',  () => shutdown('SIGINT'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
-main().catch(err => {
+main().catch((err) => {
   logger.error('Failed to start server:', err);
   process.exit(1);
 });

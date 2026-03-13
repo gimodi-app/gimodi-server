@@ -10,7 +10,7 @@ export default function migrate(db) {
     // Column may already exist from legacy ALTER TABLE in database.js
   }
 
-  const roles = db.prepare('SELECT id FROM roles ORDER BY CASE WHEN id = \'admin\' THEN 0 WHEN id = \'user\' THEN 999999 ELSE 1 END, name').all();
+  const roles = db.prepare("SELECT id FROM roles ORDER BY CASE WHEN id = 'admin' THEN 0 WHEN id = 'user' THEN 999999 ELSE 1 END, name").all();
   const update = db.prepare('UPDATE roles SET position = ? WHERE id = ?');
   db.transaction(() => {
     for (let i = 0; i < roles.length; i++) {

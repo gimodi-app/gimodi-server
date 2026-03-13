@@ -10,7 +10,23 @@ const require = createRequire(import.meta.url);
 const { version: serverVersion } = require('../../package.json');
 import state from '../state.js';
 import { PERMISSIONS } from '../permissions.js';
-import { isBanned, isBannedByUserId, findIdentityByFingerprint, insertIdentity, getUserPermissions, getUserBadge, getUserRoleColor, getUserHighestRolePosition, getUserRoles, assignRole, insertServerMessage, updateLastSeen, hasAdminUsers, getNicknameOwner, registerNickname } from '../db/database.js';
+import {
+  isBanned,
+  isBannedByUserId,
+  findIdentityByFingerprint,
+  insertIdentity,
+  getUserPermissions,
+  getUserBadge,
+  getUserRoleColor,
+  getUserHighestRolePosition,
+  getUserRoles,
+  assignRole,
+  insertServerMessage,
+  updateLastSeen,
+  hasAdminUsers,
+  getNicknameOwner,
+  registerNickname,
+} from '../db/database.js';
 import { broadcast, send } from './handler.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
@@ -98,16 +114,26 @@ export async function handleConnect(ws, data, msgId, ip) {
 
   const nicknameOwner = getNicknameOwner(trimmed);
   if (nicknameOwner && !userId) {
-    return send(ws, 'server:error', {
-      code: 'NICKNAME_REGISTERED',
-      message: 'This nickname is registered to an identity. Please choose a different nickname or connect with your identity.',
-    }, msgId);
+    return send(
+      ws,
+      'server:error',
+      {
+        code: 'NICKNAME_REGISTERED',
+        message: 'This nickname is registered to an identity. Please choose a different nickname or connect with your identity.',
+      },
+      msgId,
+    );
   }
   if (nicknameOwner && nicknameOwner !== userId) {
-    return send(ws, 'server:error', {
-      code: 'NICKNAME_REGISTERED',
-      message: 'This nickname is registered to another identity. Please choose a different nickname.',
-    }, msgId);
+    return send(
+      ws,
+      'server:error',
+      {
+        code: 'NICKNAME_REGISTERED',
+        message: 'This nickname is registered to another identity. Please choose a different nickname.',
+      },
+      msgId,
+    );
   }
   if (userId && !nicknameOwner) {
     registerNickname(userId, trimmed);
@@ -168,37 +194,46 @@ export async function handleConnect(ws, data, msgId, ip) {
     }
   }
 
-  send(ws, 'server:welcome', {
-    clientId,
-    userId,
-    badge,
-    roleColor,
-    permissions: [...permissions],
-    serverName: config.name,
-    serverVersion,
-    iconHash: config.icon?.hash || null,
-    maxFileSize: config.files.maxFileSize,
-    tempChannelDeleteDelay: config.chat.tempChannelDeleteDelay || 180,
-    supportedVersions,
-    channels: state.getChannelList().filter(ch => {
-      const channel = state.channels.get(ch.id);
-      return !channel || hasChannelVisibility(client, channel);
-    }),
-    clients: state.getClientList(),
-    hasAdmin: hasAdminUsers(),
-    voiceGrantedClients,
-    voiceRequestClients,
-  }, msgId);
+  send(
+    ws,
+    'server:welcome',
+    {
+      clientId,
+      userId,
+      badge,
+      roleColor,
+      permissions: [...permissions],
+      serverName: config.name,
+      serverVersion,
+      iconHash: config.icon?.hash || null,
+      maxFileSize: config.files.maxFileSize,
+      tempChannelDeleteDelay: config.chat.tempChannelDeleteDelay || 180,
+      supportedVersions,
+      channels: state.getChannelList().filter((ch) => {
+        const channel = state.channels.get(ch.id);
+        return !channel || hasChannelVisibility(client, channel);
+      }),
+      clients: state.getClientList(),
+      hasAdmin: hasAdminUsers(),
+      voiceGrantedClients,
+      voiceRequestClients,
+    },
+    msgId,
+  );
 
-  broadcast('server:client-joined', {
+  broadcast(
+    'server:client-joined',
+    {
+      clientId,
+      userId,
+      nickname: trimmed,
+      channelId: null,
+      badge,
+      roleColor,
+      rolePosition,
+    },
     clientId,
-    userId,
-    nickname: trimmed,
-    channelId: null,
-    badge,
-    roleColor,
-    rolePosition,
-  }, clientId);
+  );
 
   broadcastServerEvent(`→ ${trimmed} joined the server`);
 

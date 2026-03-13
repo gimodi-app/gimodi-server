@@ -1,4 +1,12 @@
-import { getAllChannels, getDefaultChannel, getAllChannelAllowedRoles, getAllChannelWriteRoles, getAllChannelReadRoles, getAllChannelVisibilityRoles, getLastMessageTimestamps } from './db/database.js';
+import {
+  getAllChannels,
+  getDefaultChannel,
+  getAllChannelAllowedRoles,
+  getAllChannelWriteRoles,
+  getAllChannelReadRoles,
+  getAllChannelVisibilityRoles,
+  getLastMessageTimestamps,
+} from './db/database.js';
 import config from './config.js';
 import logger from './logger.js';
 
@@ -181,7 +189,7 @@ class ServerState {
   getClientsByChannel(channelId) {
     const channel = this.channels.get(channelId);
     if (!channel) return [];
-    return [...channel.clients].map(id => this.clients.get(id)).filter(Boolean);
+    return [...channel.clients].map((id) => this.clients.get(id)).filter(Boolean);
   }
 
   /**
@@ -189,7 +197,7 @@ class ServerState {
    * @returns {object[]}
    */
   getChannelList() {
-    return [...this.channels.values()].map(ch => ({
+    return [...this.channels.values()].map((ch) => ({
       id: ch.id,
       name: ch.name,
       parentId: ch.parentId,
@@ -215,7 +223,7 @@ class ServerState {
    * @returns {object[]}
    */
   getClientList() {
-    return [...this.clients.values()].map(c => ({
+    return [...this.clients.values()].map((c) => ({
       id: c.id,
       userId: c.userId || null,
       nickname: c.nickname,

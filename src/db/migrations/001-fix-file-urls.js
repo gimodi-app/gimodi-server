@@ -7,13 +7,9 @@ import logger from '../../logger.js';
  * @param {import('better-sqlite3').Database} db
  */
 export default function migrate(db) {
-  const messages = db.prepare(
-    `SELECT id, content FROM messages WHERE content LIKE '%"type"%file"%' AND content LIKE '%"url"%http%'`
-  ).all();
+  const messages = db.prepare(`SELECT id, content FROM messages WHERE content LIKE '%"type"%file"%' AND content LIKE '%"url"%http%'`).all();
 
-  const serverMessages = db.prepare(
-    `SELECT id, content FROM server_messages WHERE content LIKE '%"type"%file"%' AND content LIKE '%"url"%http%'`
-  ).all();
+  const serverMessages = db.prepare(`SELECT id, content FROM server_messages WHERE content LIKE '%"type"%file"%' AND content LIKE '%"url"%http%'`).all();
 
   const update = db.prepare('UPDATE messages SET content = ? WHERE id = ?');
   const updateServer = db.prepare('UPDATE server_messages SET content = ? WHERE id = ?');

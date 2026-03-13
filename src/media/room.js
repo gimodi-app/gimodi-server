@@ -102,7 +102,7 @@ export async function createConsumersForProducer(producerClient, producer) {
     return;
   }
 
-  const peers = [...channel.clients].filter(id => id !== producerClient.id);
+  const peers = [...channel.clients].filter((id) => id !== producerClient.id);
   logger.info(`[media] Creating consumers for producer ${producer.id} (${producer.kind}) from ${producerClient.nickname} -> ${peers.length} peer(s)`);
 
   for (const clientId of peers) {
@@ -171,7 +171,7 @@ export async function consumeExistingProducers(newClient) {
     return;
   }
 
-  const peers = [...channel.clients].filter(id => id !== newClient.id);
+  const peers = [...channel.clients].filter((id) => id !== newClient.id);
   logger.info(`[media] consumeExisting for ${newClient.nickname}: checking ${peers.length} peer(s)`);
 
   for (const clientId of peers) {

@@ -20,12 +20,25 @@ export function contentDisposition(filename) {
 
 /** @type {Record<string, string>} */
 const MIME_TYPES = {
-  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
-  webp: 'image/webp', svg: 'image/svg+xml', bmp: 'image/bmp',
-  mp4: 'video/mp4', webm: 'video/webm', ogg: 'audio/ogg', mp3: 'audio/mpeg',
-  wav: 'audio/wav', pdf: 'application/pdf', zip: 'application/zip',
-  json: 'application/json', txt: 'text/plain', html: 'text/html',
-  css: 'text/css', js: 'application/javascript',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  bmp: 'image/bmp',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  ogg: 'audio/ogg',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  pdf: 'application/pdf',
+  zip: 'application/zip',
+  json: 'application/json',
+  txt: 'text/plain',
+  html: 'text/html',
+  css: 'text/css',
+  js: 'application/javascript',
 };
 
 /**

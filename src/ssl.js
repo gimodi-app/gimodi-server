@@ -33,9 +33,7 @@ export async function loadOrGenerateCert() {
   const pems = await selfsigned.generate(attrs, {
     days: 36500,
     keySize: 2048,
-    extensions: [
-      { name: 'subjectAltName', altNames },
-    ],
+    extensions: [{ name: 'subjectAltName', altNames }],
   });
 
   mkdirSync(dirname(certPath), { recursive: true });

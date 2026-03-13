@@ -2,7 +2,21 @@ import { randomUUID } from 'node:crypto';
 import state from '../state.js';
 import logger from '../logger.js';
 import { PERMISSIONS } from '../permissions.js';
-import { getAdminToken, redeemAdminToken, getUserPermissions, getUserBadge, getUserRoles, assignRole, removeRole, listAdminTokens, insertAdminToken, deleteAdminToken, deleteExpiredTokens, getRoles, logAuditEvent } from '../db/database.js';
+import {
+  getAdminToken,
+  redeemAdminToken,
+  getUserPermissions,
+  getUserBadge,
+  getUserRoles,
+  assignRole,
+  removeRole,
+  listAdminTokens,
+  insertAdminToken,
+  deleteAdminToken,
+  deleteExpiredTokens,
+  getRoles,
+  logAuditEvent,
+} from '../db/database.js';
 import { send, broadcast } from './handler.js';
 
 /**
@@ -31,7 +45,7 @@ export function handleTokenRedeem(client, data, id) {
   }
   redeemAdminToken(token, client.userId);
   const targetRole = record.role || 'admin';
-  const roleExists = getRoles().some(r => r.id === targetRole);
+  const roleExists = getRoles().some((r) => r.id === targetRole);
   if (!roleExists) {
     return send(client.ws, 'server:error', { code: 'INVALID_ROLE', message: `Role "${targetRole}" no longer exists.` }, id);
   }
@@ -69,12 +83,10 @@ export function handleTokenCreate(client, data, id) {
   }
   const role = data.role || 'admin';
   const validRoles = getRoles();
-  if (!validRoles.some(r => r.id === role)) {
+  if (!validRoles.some((r) => r.id === role)) {
     return send(client.ws, 'server:error', { code: 'INVALID_ROLE', message: 'Role does not exist.' }, id);
   }
-  const expiresIn = typeof data.expiresIn === 'number' && data.expiresIn > 0
-    ? data.expiresIn
-    : 24 * 60 * 60 * 1000;
+  const expiresIn = typeof data.expiresIn === 'number' && data.expiresIn > 0 ? data.expiresIn : 24 * 60 * 60 * 1000;
   const now = Date.now();
   const expiresAt = now + expiresIn;
   const token = randomUUID();
