@@ -30,6 +30,7 @@ import {
 import { broadcast, send } from './handler.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
+import { notifyPresenceChange, cleanupPresence } from './presence.js';
 
 /**
  * Broadcasts a server event message to all connected clients.
@@ -81,10 +82,12 @@ export async function handleConnect(ws, data, msgId, ip) {
   }
 
   let userId = null;
+  let clientFingerprint = null;
   if (publicKey && typeof publicKey === 'string') {
     try {
       const key = await openpgp.readKey({ armoredKey: publicKey });
       const fingerprint = key.getFingerprint();
+      clientFingerprint = fingerprint;
 
       const existing = findIdentityByFingerprint(fingerprint);
       if (existing) {
@@ -179,6 +182,8 @@ export async function handleConnect(ws, data, msgId, ip) {
     rolePosition,
     permissions,
     chatSubscriptions: new Set(),
+    fingerprint: clientFingerprint,
+    mode: 'active',
   };
 
   state.addClient(client);
@@ -204,6 +209,7 @@ export async function handleConnect(ws, data, msgId, ip) {
     {
       clientId,
       userId,
+      fingerprint: clientFingerprint,
       badge,
       roleColor,
       permissions: [...permissions],
@@ -230,6 +236,7 @@ export async function handleConnect(ws, data, msgId, ip) {
     {
       clientId,
       userId,
+      fingerprint: clientFingerprint,
       nickname: trimmed,
       channelId: null,
       badge,
@@ -240,6 +247,10 @@ export async function handleConnect(ws, data, msgId, ip) {
   );
 
   broadcastServerEvent(`→ ${trimmed} joined the server`);
+
+  if (clientFingerprint) {
+    notifyPresenceChange(clientFingerprint, true);
+  }
 
   logger.info(`Client connected: ${trimmed} (${clientId}${userId ? `, userId=${userId}` : ''})`);
 }
@@ -281,6 +292,7 @@ export function handleDisconnect(ws) {
   }
 
   cleanupClientMedia(client);
+  cleanupPresence(clientId);
   state.removeClient(clientId);
   if (channel) {
     maybeCloseRouter(channelId);
@@ -291,6 +303,19 @@ export function handleDisconnect(ws) {
   }
 
   broadcast('server:client-left', { clientId }, clientId);
+
+  if (client.fingerprint) {
+    let stillOnline = false;
+    for (const c of state.clients.values()) {
+      if (c.fingerprint === client.fingerprint) {
+        stillOnline = true;
+        break;
+      }
+    }
+    if (!stillOnline) {
+      notifyPresenceChange(client.fingerprint, false);
+    }
+  }
 
   logger.info(`Client disconnected: ${nickname} (${clientId})`);
 }

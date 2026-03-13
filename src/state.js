@@ -22,6 +22,8 @@ import logger from './logger.js';
  * @property {string|null} badge
  * @property {Set<string>} permissions
  * @property {Set<string>} chatSubscriptions
+ * @property {string|null} fingerprint
+ * @property {'active'|'background'} mode
  */
 
 /**
@@ -55,6 +57,8 @@ class ServerState {
     this.clients = new Map();
     /** @type {Map<string, Channel>} */
     this.channels = new Map();
+    /** @type {Map<string, Set<string>>} clientId → Set of fingerprints */
+    this.presenceSubscriptions = new Map();
   }
 
   /**
@@ -254,6 +258,7 @@ class ServerState {
       rolePosition: c.rolePosition ?? Infinity,
       muted: !!c.muted,
       deafened: !!c.deafened,
+      fingerprint: c.fingerprint || null,
     }));
   }
 }

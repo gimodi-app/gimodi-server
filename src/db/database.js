@@ -1641,4 +1641,30 @@ export function updateDmMessagePreviews(messageId, previews) {
   db.prepare('UPDATE dm_messages SET link_previews = ? WHERE id = ?').run(previews, messageId);
 }
 
+/**
+ * Returns a list of DM conversations for a user, with the latest message per conversation.
+ * @param {string} userId
+ * @returns {object[]}
+ */
+export function getDmConversations(userId) {
+  return db
+    .prepare(
+      `WITH ranked AS (
+        SELECT *,
+          ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY created_at DESC) AS rn
+        FROM dm_messages
+        WHERE sender_user_id = ? OR recipient_user_id = ?
+      )
+      SELECT r.*, i.fingerprint AS partner_fingerprint
+      FROM ranked r
+      LEFT JOIN identities i ON i.user_id = CASE
+        WHEN r.sender_user_id = ? THEN r.recipient_user_id
+        ELSE r.sender_user_id
+      END
+      WHERE r.rn = 1
+      ORDER BY r.created_at DESC`,
+    )
+    .all(userId, userId, userId);
+}
+
 export default db;

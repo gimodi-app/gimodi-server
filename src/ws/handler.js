@@ -77,7 +77,8 @@ import {
 } from './admin.js';
 import { handleGetUserInfo, handleGetPublicKey, handleGetNicknames } from './users.js';
 import { handleGetSettings, handleSetSettings } from './settings.js';
-import { handleDmSend, handleDmHistory, handleDmDelete } from './dm.js';
+import { handleDmSend, handleDmHistory, handleDmDelete, handleDmConversations } from './dm.js';
+import { handlePresenceSubscribe, handlePresenceUnsubscribe } from './presence.js';
 import { incrementCounter } from '../metrics.js';
 
 let wss;
@@ -360,11 +361,21 @@ async function routeMessage(client, type, data, id) {
         return handleDmHistory(client, data, id);
       case 'dm:delete':
         return handleDmDelete(client, data, id);
+      case 'dm:conversations':
+        return handleDmConversations(client, data, id);
+
+      case 'presence:subscribe':
+        return handlePresenceSubscribe(client, data, id);
+      case 'presence:unsubscribe':
+        return handlePresenceUnsubscribe(client, data, id);
 
       case 'server:get-settings':
         return handleGetSettings(client, data, id);
       case 'server:set-settings':
         return handleSetSettings(client, data, id);
+
+      case 'server:set-mode':
+        return handleSetMode(client, data, id);
 
       case 'server:ping':
         return;
@@ -376,6 +387,32 @@ async function routeMessage(client, type, data, id) {
     logger.error(`[ws] ERROR handling ${type} for ${client.nickname}: ${err.stack || err}`);
     send(client.ws, 'server:error', { code: 'INTERNAL_ERROR', message: err.message || 'Internal server error.' }, id);
   }
+}
+
+/**
+ * Handles switching a client between active and background mode.
+ * @param {object} client
+ * @param {object} data
+ * @param {string} [id]
+ */
+function handleSetMode(client, data, id) {
+  const { mode } = data;
+  if (mode !== 'active' && mode !== 'background') {
+    return send(client.ws, 'server:error', { code: 'INVALID_MODE', message: 'Mode must be "active" or "background".' }, id);
+  }
+  client.mode = mode;
+  send(client.ws, 'server:set-mode', { mode }, id);
+}
+
+const BACKGROUND_ALLOWED_PREFIXES = ['dm:', 'presence:', 'server:'];
+
+/**
+ * Checks whether a message type should be delivered to background clients.
+ * @param {string} type
+ * @returns {boolean}
+ */
+function isBackgroundAllowed(type) {
+  return BACKGROUND_ALLOWED_PREFIXES.some((p) => type.startsWith(p));
 }
 
 /**
@@ -413,8 +450,12 @@ export function closeWebSocket(reason) {
  * @param {string} [excludeClientId] - Client ID to exclude from broadcast
  */
 export function broadcast(type, data, excludeClientId) {
+  const bgAllowed = isBackgroundAllowed(type);
   for (const client of state.clients.values()) {
     if (client.id === excludeClientId) {
+      continue;
+    }
+    if (client.mode === 'background' && !bgAllowed) {
       continue;
     }
     send(client.ws, type, data);

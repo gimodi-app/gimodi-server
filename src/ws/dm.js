@@ -8,6 +8,7 @@ import {
   getDmMessage,
   deleteDmMessage,
   updateDmMessagePreviews,
+  getDmConversations,
   getIdentity,
 } from '../db/database.js';
 import { send } from './handler.js';
@@ -198,4 +199,32 @@ export function handleDmDelete(client, data, msgId) {
   sendToUser(otherUserId, 'dm:deleted', deletePayload);
 
   send(client.ws, 'dm:delete', { success: true }, msgId);
+}
+
+/**
+ * Handles fetching a list of DM conversations for the current user.
+ * @param {object} client
+ * @param {object} data
+ * @param {string} [msgId]
+ */
+export function handleDmConversations(client, data, msgId) {
+  if (!client.userId) {
+    return send(client.ws, 'server:error', { code: 'IDENTITY_REQUIRED', message: 'An identity is required for direct messages.' }, msgId);
+  }
+
+  const rows = getDmConversations(client.userId);
+
+  const conversations = rows.map((r) => ({
+    conversationId: r.conversation_id,
+    partnerUserId: r.sender_user_id === client.userId ? r.recipient_user_id : r.sender_user_id,
+    partnerFingerprint: r.partner_fingerprint || null,
+    lastMessage: {
+      id: r.id,
+      content: r.content,
+      senderUserId: r.sender_user_id,
+      timestamp: r.created_at,
+    },
+  }));
+
+  send(client.ws, 'dm:conversations', { conversations }, msgId);
 }
