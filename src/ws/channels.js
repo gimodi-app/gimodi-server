@@ -152,6 +152,10 @@ export async function handleJoinChannel(client, data, msgId) {
     return send(client.ws, 'server:error', { code: 'CANNOT_JOIN_GROUP', message: 'Cannot join a channel group.' }, msgId);
   }
 
+  if (channel.type === 'placeholder') {
+    return send(client.ws, 'server:error', { code: 'CANNOT_JOIN_PLACEHOLDER', message: 'Cannot join a placeholder.' }, msgId);
+  }
+
   if (channel.password && password !== channel.password && !client.permissions.has(PERMISSIONS.CHANNEL_BYPASS_PASSWORD)) {
     return send(client.ws, 'server:error', { code: 'BAD_PASSWORD', message: 'Incorrect channel password.' }, msgId);
   }
@@ -300,7 +304,7 @@ export async function handleJoinChannel(client, data, msgId) {
 export function handleCreateChannel(client, data, msgId) {
   const type = data.type || 'channel';
 
-  if (type !== 'channel' && type !== 'group') {
+  if (type !== 'channel' && type !== 'group' && type !== 'placeholder') {
     return send(client.ws, 'server:error', { code: 'INVALID_TYPE', message: 'Invalid channel type.' }, msgId);
   }
 
@@ -309,6 +313,10 @@ export function handleCreateChannel(client, data, msgId) {
   if (type === 'group') {
     if (!client.permissions.has(PERMISSIONS.CHANNEL_GROUP_CREATE)) {
       return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'No permission to create channel groups.' }, msgId);
+    }
+  } else if (type === 'placeholder') {
+    if (!client.permissions.has(PERMISSIONS.CHANNEL_PLACEHOLDER_CREATE)) {
+      return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'No permission to create placeholders.' }, msgId);
     }
   } else if (isTemporary) {
     if (!client.permissions.has(PERMISSIONS.CHANNEL_CREATE_TEMPORARY)) {
@@ -324,6 +332,10 @@ export function handleCreateChannel(client, data, msgId) {
     return send(client.ws, 'server:error', { code: 'INVALID_TYPE', message: 'Temporary channels cannot be groups.' }, msgId);
   }
 
+  if (isTemporary && type === 'placeholder') {
+    return send(client.ws, 'server:error', { code: 'INVALID_TYPE', message: 'Placeholders cannot be temporary.' }, msgId);
+  }
+
   const { name, parentId, password, maxUsers, description, moderated } = data;
 
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -336,6 +348,10 @@ export function handleCreateChannel(client, data, msgId) {
 
   if (type === 'group' && password) {
     return send(client.ws, 'server:error', { code: 'INVALID_GROUP', message: 'Groups cannot have a password.' }, msgId);
+  }
+
+  if (type === 'placeholder' && password) {
+    return send(client.ws, 'server:error', { code: 'INVALID_PLACEHOLDER', message: 'Placeholders cannot have a password.' }, msgId);
   }
 
   if (parentId && !state.channels.has(parentId)) {
@@ -353,9 +369,9 @@ export function handleCreateChannel(client, data, msgId) {
     id: randomUUID(),
     name: name.trim(),
     parentId: parentId || null,
-    password: (type === 'group') ? null : (password || null),
-    maxUsers: maxUsers || null,
-    description: description || '',
+    password: (type === 'group' || type === 'placeholder') ? null : (password || null),
+    maxUsers: (type === 'placeholder') ? null : (maxUsers || null),
+    description: (type === 'placeholder') ? '' : (description || ''),
     isDefault: false,
     sortOrder: state.channels.size,
     moderated: !!moderated,
@@ -546,12 +562,12 @@ export function handleUpdateChannel(client, data, msgId) {
   }
 
   if (props.name !== undefined) channel.name = props.name;
-  if (props.password !== undefined) channel.password = props.password || null;
-  if (props.maxUsers !== undefined) channel.maxUsers = props.maxUsers || null;
-  if (props.description !== undefined) channel.description = props.description;
+  if (props.password !== undefined && channel.type !== 'placeholder') channel.password = props.password || null;
+  if (props.maxUsers !== undefined && channel.type !== 'placeholder') channel.maxUsers = props.maxUsers || null;
+  if (props.description !== undefined && channel.type !== 'placeholder') channel.description = props.description;
   if (props.parentId !== undefined) channel.parentId = props.parentId;
   if (props.sortOrder !== undefined) channel.sortOrder = props.sortOrder;
-  if (props.moderated !== undefined) channel.moderated = !!props.moderated;
+  if (props.moderated !== undefined && channel.type !== 'placeholder') channel.moderated = !!props.moderated;
   if (props.allowedRoles !== undefined && Array.isArray(props.allowedRoles)) {
     channel.allowedRoles = props.allowedRoles;
     setChannelAllowedRoles(channelId, props.allowedRoles);

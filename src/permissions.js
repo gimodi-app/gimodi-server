@@ -5,6 +5,7 @@
 export const PERMISSIONS = {
   CHANNEL_CREATE:            'channel.create',
   CHANNEL_GROUP_CREATE:      'channel.group_create',
+  CHANNEL_PLACEHOLDER_CREATE: 'channel.placeholder_create',
   CHANNEL_DELETE:            'channel.delete',
   CHANNEL_UPDATE:            'channel.update',
   CHANNEL_BYPASS_PASSWORD:   'channel.bypass_password',
@@ -62,6 +63,7 @@ export const PERMISSION_GROUPS = [
     permissions: [
       'channel.create',
       'channel.group_create',
+      'channel.placeholder_create',
       'channel.create_temporary',
       'channel.update',
       'channel.delete',
@@ -159,6 +161,7 @@ export const PERMISSION_GROUPS = [
 export const PERMISSION_LABELS = {
   'channel.create':                  'Create Channels',
   'channel.group_create':            'Create Channel Groups',
+  'channel.placeholder_create':      'Create Placeholders',
   'channel.delete':                  'Delete Channels',
   'channel.update':                  'Update Channels',
   'channel.bypass_password':         'Bypass Channel Password',
