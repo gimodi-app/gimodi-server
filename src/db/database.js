@@ -1566,4 +1566,79 @@ export function getAnalyticsData() {
   };
 }
 
+// --- Direct Messages ---
+
+/**
+ * Inserts a direct message into the database.
+ * @param {object} msg
+ */
+export function insertDmMessage(msg) {
+  db.prepare(
+    `INSERT INTO dm_messages (id, conversation_id, sender_user_id, recipient_user_id, content, reply_to, reply_to_content, reply_to_user_id, link_previews, created_at)
+     VALUES (@id, @conversationId, @senderUserId, @recipientUserId, @content, @replyTo, @replyToContent, @replyToUserId, @linkPreviews, @createdAt)`,
+  ).run({
+    id: msg.id,
+    conversationId: msg.conversationId,
+    senderUserId: msg.senderUserId,
+    recipientUserId: msg.recipientUserId,
+    content: msg.content,
+    replyTo: msg.replyTo ?? null,
+    replyToContent: msg.replyToContent ?? null,
+    replyToUserId: msg.replyToUserId ?? null,
+    linkPreviews: msg.linkPreviews ?? null,
+    createdAt: msg.createdAt,
+  });
+}
+
+/**
+ * Returns paginated DM messages for a conversation.
+ * @param {string} conversationId
+ * @param {object} [options]
+ * @param {number} [options.before]
+ * @param {number} [options.limit]
+ * @returns {object[]}
+ */
+export function getDmMessages(conversationId, { before, limit = 50 } = {}) {
+  if (before) {
+    return db
+      .prepare(
+        `SELECT * FROM dm_messages WHERE conversation_id = ? AND created_at < ?
+       ORDER BY created_at DESC LIMIT ?`,
+      )
+      .all(conversationId, before, limit);
+  }
+  return db
+    .prepare(
+      `SELECT * FROM dm_messages WHERE conversation_id = ?
+     ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(conversationId, limit);
+}
+
+/**
+ * Returns a single DM message by ID.
+ * @param {string} id
+ * @returns {object|undefined}
+ */
+export function getDmMessage(id) {
+  return db.prepare('SELECT * FROM dm_messages WHERE id = ?').get(id);
+}
+
+/**
+ * Deletes a DM message by ID.
+ * @param {string} id
+ */
+export function deleteDmMessage(id) {
+  db.prepare('DELETE FROM dm_messages WHERE id = ?').run(id);
+}
+
+/**
+ * Updates the link previews for a DM message.
+ * @param {string} messageId
+ * @param {string} previews
+ */
+export function updateDmMessagePreviews(messageId, previews) {
+  db.prepare('UPDATE dm_messages SET link_previews = ? WHERE id = ?').run(previews, messageId);
+}
+
 export default db;

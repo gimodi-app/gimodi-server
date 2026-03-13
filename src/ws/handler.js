@@ -77,6 +77,7 @@ import {
 } from './admin.js';
 import { handleGetUserInfo, handleGetPublicKey, handleGetNicknames } from './users.js';
 import { handleGetSettings, handleSetSettings } from './settings.js';
+import { handleDmSend, handleDmHistory, handleDmDelete } from './dm.js';
 import { incrementCounter } from '../metrics.js';
 
 let wss;
@@ -352,6 +353,13 @@ async function routeMessage(client, type, data, id) {
         return handleAddNickname(client, data, id);
       case 'admin:get-analytics':
         return handleGetAnalytics(client, data, id);
+
+      case 'dm:send':
+        return handleDmSend(client, data, id);
+      case 'dm:history':
+        return handleDmHistory(client, data, id);
+      case 'dm:delete':
+        return handleDmDelete(client, data, id);
 
       case 'server:get-settings':
         return handleGetSettings(client, data, id);

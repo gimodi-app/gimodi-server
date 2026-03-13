@@ -186,6 +186,21 @@ class ServerState {
   }
 
   /**
+   * Returns all connected clients with the given userId.
+   * @param {string} userId
+   * @returns {Client[]}
+   */
+  getClientsByUserId(userId) {
+    const result = [];
+    for (const client of this.clients.values()) {
+      if (client.userId === userId) {
+        result.push(client);
+      }
+    }
+    return result;
+  }
+
+  /**
    * Returns all clients in a given channel.
    * @param {string} channelId
    * @returns {Client[]}
