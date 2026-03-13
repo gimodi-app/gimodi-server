@@ -76,12 +76,6 @@ try {
   /* column already removed */
 }
 try {
-  db.prepare('SELECT from_nickname FROM dm_messages LIMIT 0').get();
-  db.exec('ALTER TABLE dm_messages DROP COLUMN from_nickname');
-} catch {
-  /* column already removed */
-}
-try {
   db.prepare('SELECT moderated FROM channels LIMIT 0').get();
 } catch {
   db.exec('ALTER TABLE channels ADD COLUMN moderated INTEGER NOT NULL DEFAULT 0');
@@ -370,23 +364,6 @@ export function isBannedByUserId(userId) {
 }
 
 /**
- * Inserts a direct message.
- * @param {object} msg
- */
-export function insertDmMessage(msg) {
-  db.prepare(
-    `INSERT INTO dm_messages (id, from_user_id, to_user_id, content, created_at)
-     VALUES (@id, @fromUserId, @toUserId, @content, @createdAt)`,
-  ).run({
-    id: msg.id,
-    fromUserId: msg.fromUserId,
-    toUserId: msg.toUserId,
-    content: msg.content,
-    createdAt: msg.createdAt,
-  });
-}
-
-/**
  * Returns the nickname for a user ID from the identities table.
  * @param {string} userId
  * @returns {string|null}
@@ -394,28 +371,6 @@ export function insertDmMessage(msg) {
 export function getNicknameByUserId(userId) {
   const row = db.prepare('SELECT name FROM identities WHERE user_id = ?').get(userId);
   return row ? row.name : null;
-}
-
-/**
- * Returns direct messages between two users with optional pagination.
- * @param {string} userIdA
- * @param {string} userIdB
- * @param {object} [options]
- * @param {number} [options.before]
- * @param {number} [options.limit]
- * @returns {object[]}
- */
-export function getDmMessages(userIdA, userIdB, { before, limit = 50 } = {}) {
-  const q = `
-    SELECT * FROM dm_messages
-    WHERE (from_user_id = ? AND to_user_id = ?)
-       OR (from_user_id = ? AND to_user_id = ?)
-    ${before ? 'AND created_at < ?' : ''}
-    ORDER BY created_at DESC
-    LIMIT ?
-  `;
-  const params = before ? [userIdA, userIdB, userIdB, userIdA, before, limit] : [userIdA, userIdB, userIdB, userIdA, limit];
-  return db.prepare(q).all(...params);
 }
 
 /**
@@ -527,14 +482,6 @@ export function deleteNicknameRegistration(userId, nickname) {
  */
 export function deleteUserRoles(userId) {
   db.prepare('DELETE FROM user_roles WHERE user_id = ?').run(userId);
-}
-
-/**
- * Deletes all direct messages sent to or from a user.
- * @param {string} userId
- */
-export function deleteUserDmMessages(userId) {
-  db.prepare('DELETE FROM dm_messages WHERE from_user_id = ? OR to_user_id = ?').run(userId, userId);
 }
 
 /**
@@ -1558,8 +1505,6 @@ export function getAnalyticsData() {
   const messages7d = db.prepare('SELECT COUNT(*) as c FROM messages WHERE created_at > ?').get(sevenDaysAgo).c;
   const messages30d = db.prepare('SELECT COUNT(*) as c FROM messages WHERE created_at > ?').get(thirtyDaysAgo).c;
 
-  const totalDms = db.prepare('SELECT COUNT(*) as c FROM dm_messages').get().c;
-
   const totalFiles = db.prepare('SELECT COUNT(*) as c FROM files').get().c;
   const fileStats = db.prepare('SELECT COALESCE(SUM(size), 0) as totalSize FROM files').get();
 
@@ -1609,7 +1554,6 @@ export function getAnalyticsData() {
 
   return {
     messages: { total: totalMessages, today: messagesToday, last7d: messages7d, last30d: messages30d },
-    dms: { total: totalDms },
     serverMessages,
     files: { total: totalFiles, totalSize: fileStats.totalSize, byType: filesByType, topUploaders },
     identities: { total: totalIdentities, active7d: activeIdentities7d },

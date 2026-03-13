@@ -13,8 +13,6 @@ import {
   deleteMessage,
   updateMessagePreviews,
   clearMessagePreviews,
-  insertDmMessage,
-  getDmMessages,
   getUserBadge,
   getUserRoleColor,
   insertServerMessage,
@@ -308,97 +306,6 @@ export function handleChatSend(client, data, msgId) {
       }
     })
     .catch(() => {});
-}
-
-/**
- * Handles sending a direct message to another client.
- * @param {object} client
- * @param {object} data
- * @param {string} [msgId]
- */
-export function handleDmSend(client, data, msgId) {
-  const { targetId, content } = data;
-
-  if (!content || typeof content !== 'string' || content.trim().length === 0) {
-    return send(client.ws, 'server:error', { code: 'EMPTY_MESSAGE', message: 'Message cannot be empty.' }, msgId);
-  }
-
-  if (content.length > MAX_MESSAGE_LENGTH) {
-    return send(client.ws, 'server:error', { code: 'MESSAGE_TOO_LONG', message: `Message exceeds ${MAX_MESSAGE_LENGTH} characters.` }, msgId);
-  }
-
-  if (!targetId) {
-    return send(client.ws, 'server:error', { code: 'INVALID_TARGET', message: 'Target client ID required.' }, msgId);
-  }
-
-  const target = state.clients.get(targetId);
-  if (!target) {
-    return send(client.ws, 'server:error', { code: 'CLIENT_NOT_FOUND', message: 'Target client not found.' }, msgId);
-  }
-
-  const timestamp = Date.now();
-  const trimmedContent = content.trim();
-
-  if (client.userId && target.userId) {
-    insertDmMessage({
-      id: randomUUID(),
-      fromUserId: client.userId,
-      toUserId: target.userId,
-      content: trimmedContent,
-      createdAt: timestamp,
-    });
-  }
-
-  const msgData = {
-    fromId: client.id,
-    fromUserId: client.userId || null,
-    fromNickname: client.nickname,
-    targetId,
-    content: trimmedContent,
-    timestamp,
-    encrypted: true,
-  };
-
-  incrementCounter('dmMessagesTotal');
-
-  send(target.ws, 'chat:dm-receive', msgData);
-  if (targetId !== client.id) {
-    send(client.ws, 'chat:dm-receive', msgData);
-  }
-}
-
-/**
- * Handles fetching DM history between the client and a target user.
- * @param {object} client
- * @param {object} data
- * @param {string} [msgId]
- */
-export function handleDmHistory(client, data, msgId) {
-  const { targetUserId, before, limit } = data;
-
-  if (!client.userId) {
-    return send(client.ws, 'chat:dm-history-result', { targetUserId, messages: [] }, msgId);
-  }
-
-  if (!targetUserId) {
-    return send(client.ws, 'server:error', { code: 'INVALID_TARGET', message: 'targetUserId required.' }, msgId);
-  }
-
-  const rows = getDmMessages(client.userId, targetUserId, {
-    before: before || undefined,
-    limit: Math.min(limit || 50, 100),
-  });
-
-  const messages = rows.map((r) => ({
-    id: r.id,
-    fromUserId: r.from_user_id,
-    toUserId: r.to_user_id,
-    content: r.content,
-    timestamp: r.created_at,
-    encrypted: true,
-  }));
-
-  send(client.ws, 'chat:dm-history-result', { targetUserId, messages }, msgId);
 }
 
 /**

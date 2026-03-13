@@ -12,7 +12,6 @@ import {
   getUserRoles,
   deleteIdentity,
   deleteUserRoles,
-  deleteUserDmMessages,
   getRegisteredNicknames,
   deleteNicknameRegistration,
   getNicknameOwner,
@@ -271,7 +270,6 @@ export function handleDeleteUser(client, data, id) {
   }
 
   deleteUserRoles(userId);
-  deleteUserDmMessages(userId);
   deleteIdentity(userId);
 
   logAuditEvent('delete_user', client.userId, client.nickname, userId, identity.name, null);
@@ -313,7 +311,6 @@ export function handleBulkDeleteUsers(client, data, id) {
     }
 
     deleteUserRoles(userId);
-    deleteUserDmMessages(userId);
     deleteIdentity(userId);
     deleted++;
   }
@@ -514,7 +511,6 @@ export function handleGetAnalytics(client, data, id) {
         sessionsTotal: counters.connectionsTotal,
         wsMessagesTotal: counters.websocketMessagesTotal,
         sessionMessagesTotal: counters.messagesTotal,
-        sessionDmsTotal: counters.dmMessagesTotal,
         sessionFilesTotal: counters.filesUploadedTotal,
       },
       db: dbData,

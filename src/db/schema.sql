@@ -34,17 +34,6 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_messages_channel
     ON messages(channel_id, created_at);
 
-CREATE TABLE IF NOT EXISTS dm_messages (
-    id              TEXT PRIMARY KEY,
-    from_user_id    TEXT NOT NULL,
-    to_user_id      TEXT NOT NULL,
-    content         TEXT NOT NULL,
-    created_at      INTEGER NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_dm_messages_convo
-    ON dm_messages(from_user_id, to_user_id, created_at);
-
 CREATE TABLE IF NOT EXISTS identities (
     user_id     TEXT PRIMARY KEY,
     public_key  TEXT NOT NULL UNIQUE,

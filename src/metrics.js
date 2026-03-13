@@ -41,7 +41,6 @@ export function isIpInCidr(ip, cidr) {
 
 export const counters = {
   messagesTotal: 0,
-  dmMessagesTotal: 0,
   filesUploadedTotal: 0,
   websocketMessagesTotal: 0,
   connectionsTotal: 0,
@@ -161,10 +160,6 @@ export function collectMetrics() {
   lines.push('# HELP gimodi_messages_total Total chat messages sent since server start.');
   lines.push('# TYPE gimodi_messages_total counter');
   lines.push(`gimodi_messages_total ${counters.messagesTotal}`);
-
-  lines.push('# HELP gimodi_dm_messages_total Total direct messages sent since server start.');
-  lines.push('# TYPE gimodi_dm_messages_total counter');
-  lines.push(`gimodi_dm_messages_total ${counters.dmMessagesTotal}`);
 
   lines.push('# HELP gimodi_files_uploaded_total Total files uploaded since server start.');
   lines.push('# TYPE gimodi_files_uploaded_total counter');

@@ -11,8 +11,6 @@ import {
   handleChatDelete,
   handleChatEdit,
   handleRemovePreview,
-  handleDmSend,
-  handleDmHistory,
   handleServerChatSend,
   handleServerChatHistory,
   handleServerChatDelete,
@@ -222,10 +220,6 @@ async function routeMessage(client, type, data, id) {
         return handleChatEdit(client, data, id);
       case 'chat:remove-preview':
         return handleRemovePreview(client, data, id);
-      case 'chat:dm-send':
-        return handleDmSend(client, data, id);
-      case 'chat:dm-history':
-        return handleDmHistory(client, data, id);
       case 'chat:server-send':
         return handleServerChatSend(client, data, id);
       case 'chat:server-history':
