@@ -2,7 +2,7 @@ import { WebSocketServer } from 'ws';
 import state from '../state.js';
 import logger from '../logger.js';
 import config from '../config.js';
-import { handleConnect, handleDisconnect } from './connection.js';
+import { handleConnect, handleDisconnect, handleUpgrade } from './connection.js';
 import { handleJoinChannel, handleLeaveChannel, handleCreateChannel, handleDeleteChannel, handleUpdateChannel, handleListChannels } from './channels.js';
 import {
   handleChatSend,
@@ -358,6 +358,9 @@ async function routeMessage(client, type, data, id) {
       case 'server:set-settings':
         return handleSetSettings(client, data, id);
 
+      case 'server:upgrade':
+        return handleUpgrade(client, data, id);
+
       case 'server:ping':
         return;
 
@@ -406,7 +409,7 @@ export function closeWebSocket(reason) {
  */
 export function broadcast(type, data, excludeClientId) {
   for (const client of state.clients.values()) {
-    if (client.id === excludeClientId) {
+    if (client.id === excludeClientId || client.observe) {
       continue;
     }
     send(client.ws, type, data);

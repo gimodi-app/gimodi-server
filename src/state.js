@@ -22,6 +22,7 @@ import logger from './logger.js';
  * @property {string|null} badge
  * @property {Set<string>} permissions
  * @property {Set<string>} chatSubscriptions
+ * @property {boolean} observe
  */
 
 /**
@@ -172,12 +173,30 @@ class ServerState {
   }
 
   /**
+   * Returns the number of non-observe clients.
+   * @returns {number}
+   */
+  getFullClientCount() {
+    let count = 0;
+    for (const client of this.clients.values()) {
+      if (!client.observe) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
    * Checks if a nickname is already in use (case-insensitive).
    * @param {string} nickname
+   * @param {boolean} [excludeObserve] - If true, skip observe-mode clients.
    * @returns {boolean}
    */
-  isNicknameTaken(nickname) {
+  isNicknameTaken(nickname, excludeObserve) {
     for (const client of this.clients.values()) {
+      if (excludeObserve && client.observe) {
+        continue;
+      }
       if (client.nickname.toLowerCase() === nickname.toLowerCase()) {
         return true;
       }
@@ -229,7 +248,7 @@ class ServerState {
    * @returns {object[]}
    */
   getClientList() {
-    return [...this.clients.values()].map((c) => ({
+    return [...this.clients.values()].filter((c) => !c.observe).map((c) => ({
       id: c.id,
       userId: c.userId || null,
       nickname: c.nickname,
