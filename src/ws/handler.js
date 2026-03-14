@@ -75,9 +75,18 @@ import {
   handleAddNickname,
   handleGetAnalytics,
 } from './admin.js';
-import { handleGetUserInfo, handleGetPublicKey, handleGetNicknames } from './users.js';
+import { handleGetUserInfo, handleGetPublicKey, handleGetPublicKeys, handleGetNicknames } from './users.js';
 import { handleGetSettings, handleSetSettings } from './settings.js';
 import { handleDmSend, handleDmAck, handleDmHistory } from './dm.js';
+import {
+  handleConversationCreate,
+  handleConversationJoined,
+  handleConversationLeave,
+  handleConversationRemoveParticipant,
+  handleConversationList,
+  handleConversationKeyUpdate,
+  handleConversationAddParticipant,
+} from './conversation.js';
 import { handleFriendRequest, handleFriendAccept, handleFriendReject, handleFriendList, handleFriendRemove } from './friends.js';
 import { handlePresenceSubscribe, handlePresenceUnsubscribe } from './presence.js';
 import { incrementCounter } from '../metrics.js';
@@ -208,6 +217,8 @@ async function routeMessage(client, type, data, id) {
         return handleGetUserInfo(client, data, id);
       case 'user:get-public-key':
         return handleGetPublicKey(client, data, id);
+      case 'user:get-public-keys':
+        return handleGetPublicKeys(client, data, id);
       case 'user:get-nicknames':
         return handleGetNicknames(client, data, id);
 
@@ -363,6 +374,21 @@ async function routeMessage(client, type, data, id) {
 
       case 'server:upgrade':
         return handleUpgrade(client, data, id);
+
+      case 'conversation:create':
+        return handleConversationCreate(client, data, id);
+      case 'conversation:joined':
+        return handleConversationJoined(client, data, id);
+      case 'conversation:leave':
+        return handleConversationLeave(client, data, id);
+      case 'conversation:remove-participant':
+        return handleConversationRemoveParticipant(client, data, id);
+      case 'conversation:list':
+        return handleConversationList(client, data, id);
+      case 'conversation:key-update':
+        return handleConversationKeyUpdate(client, data, id);
+      case 'conversation:add-participant':
+        return handleConversationAddParticipant(client, data, id);
 
       case 'dm:send':
         return handleDmSend(client, data, id);

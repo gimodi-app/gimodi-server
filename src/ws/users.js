@@ -1,6 +1,6 @@
 import state from '../state.js';
 import { PERMISSIONS } from '../permissions.js';
-import { getIdentity, getNicknameByUserId, getUserHighestRolePosition } from '../db/database.js';
+import { getIdentity, findIdentityByFingerprint, getNicknameByUserId, getUserHighestRolePosition } from '../db/database.js';
 import { send } from './handler.js';
 
 /**
@@ -53,6 +53,27 @@ export function handleGetPublicKey(client, data, id) {
     },
     id,
   );
+}
+
+/**
+ * Returns public keys for a list of fingerprints.
+ * @param {object} client
+ * @param {object} data
+ * @param {string} [id]
+ */
+export function handleGetPublicKeys(client, data, id) {
+  const { fingerprints } = data;
+  if (!Array.isArray(fingerprints)) {
+    return send(client.ws, 'server:error', { code: 'INVALID_REQUEST', message: 'fingerprints must be an array.' }, id);
+  }
+
+  const keys = {};
+  for (const fp of fingerprints) {
+    const identity = findIdentityByFingerprint(fp);
+    keys[fp] = identity?.public_key ?? null;
+  }
+
+  send(client.ws, 'user:public-keys', { keys }, id);
 }
 
 /**
