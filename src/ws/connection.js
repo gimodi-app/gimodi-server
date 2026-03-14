@@ -28,6 +28,7 @@ import {
   registerNickname,
 } from '../db/database.js';
 import { broadcast, send } from './handler.js';
+import { deliverPendingDms } from './dm.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
 
@@ -85,10 +86,11 @@ export async function handleConnect(ws, data, msgId, ip) {
   }
 
   let userId = null;
+  let fingerprint = null;
   if (publicKey && typeof publicKey === 'string') {
     try {
       const key = await openpgp.readKey({ armoredKey: publicKey });
-      const fingerprint = key.getFingerprint();
+      fingerprint = key.getFingerprint();
 
       const existing = findIdentityByFingerprint(fingerprint);
       if (existing) {
@@ -165,6 +167,7 @@ export async function handleConnect(ws, data, msgId, ip) {
   const client = {
     id: clientId,
     userId,
+    fingerprint,
     nickname: trimmed,
     ws,
     channelId: null,
@@ -248,6 +251,8 @@ export async function handleConnect(ws, data, msgId, ip) {
     },
     msgId,
   );
+
+  deliverPendingDms(client);
 
   broadcast(
     'server:client-joined',

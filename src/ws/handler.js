@@ -77,6 +77,7 @@ import {
 } from './admin.js';
 import { handleGetUserInfo, handleGetPublicKey, handleGetNicknames } from './users.js';
 import { handleGetSettings, handleSetSettings } from './settings.js';
+import { handleDmSend, handleDmAck, handleDmHistory } from './dm.js';
 import { incrementCounter } from '../metrics.js';
 
 let wss;
@@ -360,6 +361,13 @@ async function routeMessage(client, type, data, id) {
 
       case 'server:upgrade':
         return handleUpgrade(client, data, id);
+
+      case 'dm:send':
+        return handleDmSend(client, data, id);
+      case 'dm:ack':
+        return handleDmAck(client, data, id);
+      case 'dm:history':
+        return handleDmHistory(client, data, id);
 
       case 'server:ping':
         return;
