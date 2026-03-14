@@ -1626,4 +1626,85 @@ export function getDmHistory(fingerprintA, fingerprintB, { before, limit = 50 } 
     .all(fingerprintA, fingerprintB, fingerprintB, fingerprintA, limit);
 }
 
+/**
+ * Inserts a new friend request.
+ * @param {{ id: string, senderFingerprint: string, recipientFingerprint: string, senderPublicKey: string, senderNickname: string, createdAt: number }} req
+ */
+export function insertFriendRequest(req) {
+  db.prepare(
+    `INSERT INTO friend_requests (id, sender_fingerprint, recipient_fingerprint, sender_public_key, sender_nickname, status, created_at)
+     VALUES (@id, @senderFingerprint, @recipientFingerprint, @senderPublicKey, @senderNickname, 'pending', @createdAt)`,
+  ).run({
+    id: req.id,
+    senderFingerprint: req.senderFingerprint,
+    recipientFingerprint: req.recipientFingerprint,
+    senderPublicKey: req.senderPublicKey,
+    senderNickname: req.senderNickname,
+    createdAt: req.createdAt,
+  });
+}
+
+/**
+ * Returns a friend request by ID.
+ * @param {string} id
+ * @returns {object|undefined}
+ */
+export function getFriendRequest(id) {
+  return db.prepare('SELECT * FROM friend_requests WHERE id = ?').get(id);
+}
+
+/**
+ * Returns the pending friend request between two fingerprints in either direction.
+ * @param {string} fpA
+ * @param {string} fpB
+ * @returns {object|undefined}
+ */
+export function getPendingRequestBetween(fpA, fpB) {
+  return db.prepare(
+    `SELECT * FROM friend_requests
+     WHERE status = 'pending'
+       AND ((sender_fingerprint = ? AND recipient_fingerprint = ?)
+         OR (sender_fingerprint = ? AND recipient_fingerprint = ?))`,
+  ).get(fpA, fpB, fpB, fpA);
+}
+
+/**
+ * Returns all pending incoming friend requests for a fingerprint.
+ * @param {string} recipientFingerprint
+ * @returns {object[]}
+ */
+export function getPendingFriendRequests(recipientFingerprint) {
+  return db.prepare(
+    `SELECT * FROM friend_requests WHERE recipient_fingerprint = ? AND status = 'pending' ORDER BY created_at ASC`,
+  ).all(recipientFingerprint);
+}
+
+/**
+ * Returns accepted friend requests where the sender has not been notified yet.
+ * @param {string} senderFingerprint
+ * @returns {object[]}
+ */
+export function getUnnotifiedAcceptedRequests(senderFingerprint) {
+  return db.prepare(
+    `SELECT * FROM friend_requests WHERE sender_fingerprint = ? AND status = 'accepted' ORDER BY resolved_at ASC`,
+  ).all(senderFingerprint);
+}
+
+/**
+ * Updates a friend request's status.
+ * @param {string} id
+ * @param {string} status
+ */
+export function updateFriendRequestStatus(id, status) {
+  db.prepare('UPDATE friend_requests SET status = ?, resolved_at = ? WHERE id = ?').run(status, Date.now(), id);
+}
+
+/**
+ * Deletes a friend request by ID.
+ * @param {string} id
+ */
+export function deleteFriendRequest(id) {
+  db.prepare('DELETE FROM friend_requests WHERE id = ?').run(id);
+}
+
 export default db;

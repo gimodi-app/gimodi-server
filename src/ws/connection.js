@@ -29,6 +29,7 @@ import {
 } from '../db/database.js';
 import { broadcast, send } from './handler.js';
 import { deliverPendingDms } from './dm.js';
+import { deliverPendingFriendRequests } from './friends.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
 
@@ -256,6 +257,12 @@ export async function handleConnect(ws, data, msgId, ip) {
     deliverPendingDms(client);
   } catch (err) {
     logger.warn(`[dm] Failed to deliver pending DMs to ${trimmed}: ${err.message}`);
+  }
+
+  try {
+    deliverPendingFriendRequests(client);
+  } catch (err) {
+    logger.warn(`[friends] Failed to deliver pending friend requests to ${trimmed}: ${err.message}`);
   }
 
   broadcast(
