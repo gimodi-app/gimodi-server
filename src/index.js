@@ -6,7 +6,7 @@ import state from './state.js';
 import { initWebSocket, closeWebSocket } from './ws/handler.js';
 import { checkTemporaryChannel } from './ws/channels.js';
 import { initWorkers, closeWorkers } from './media/workers.js';
-import { getAdminTokenCount, insertAdminToken, deleteExpiredTokens } from './db/database.js';
+import { getAdminTokenCount, insertAdminToken, deleteExpiredTokens, purgeAllDmAndFriendData } from './db/database.js';
 import { runMigrations } from './db/migrate.js';
 import { loadOrGenerateCert } from './ssl.js';
 import { setCors } from './http/utils.js';
@@ -39,6 +39,11 @@ async function main() {
     logger.info(`STARTUP ADMIN TOKEN: ${token}`);
     logger.info(`Expires: ${new Date(expiresAt).toLocaleString()}`);
     logger.info('========================================');
+  }
+
+  if (process.env.GIMODI_PURGE_DM_DATA === 'true' || process.env.GIMODI_PURGE_DM_DATA === '1') {
+    const { dmCount, friendRequestCount } = purgeAllDmAndFriendData();
+    logger.info(`Purged ${dmCount} DM(s) and ${friendRequestCount} friend request(s).`);
   }
 
   deleteExpiredTokens();
