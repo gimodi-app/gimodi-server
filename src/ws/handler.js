@@ -432,10 +432,14 @@ export function closeWebSocket(reason) {
  * @param {string} type - Message type
  * @param {object} data - Message payload
  * @param {string} [excludeClientId] - Client ID to exclude from broadcast
+ * @param {boolean} [includeObservers=false] - Whether to also send to observe-mode clients
  */
-export function broadcast(type, data, excludeClientId) {
+export function broadcast(type, data, excludeClientId, includeObservers = false) {
   for (const client of state.clients.values()) {
-    if (client.id === excludeClientId || client.observe) {
+    if (client.id === excludeClientId) {
+      continue;
+    }
+    if (!includeObservers && client.observe) {
       continue;
     }
     send(client.ws, type, data);

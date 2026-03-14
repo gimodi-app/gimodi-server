@@ -205,9 +205,14 @@ export async function handleConnect(ws, data, msgId, ip) {
         serverName: config.name,
         iconHash: config.icon?.hash || null,
         mode: 'observe',
+        clients: state.getClientList(),
       },
       msgId,
     );
+
+    if (fingerprint) {
+      broadcast('server:client-joined', { clientId, fingerprint, observe: true }, clientId, true);
+    }
 
     logger.info(`Client connected (observe): ${trimmed} (${clientId}${userId ? `, userId=${userId}` : ''})`);
     return;
@@ -279,6 +284,7 @@ export async function handleConnect(ws, data, msgId, ip) {
       fingerprint: fingerprint || null,
     },
     clientId,
+    true,
   );
 
   broadcastServerEvent(`→ ${trimmed} joined the server`);
@@ -436,7 +442,9 @@ export function handleDisconnect(ws) {
       checkTemporaryChannel(channelId);
     }
 
-    broadcast('server:client-left', { clientId }, clientId);
+    broadcast('server:client-left', { clientId }, clientId, true);
+  } else if (client.fingerprint) {
+    broadcast('server:client-left', { clientId }, clientId, true);
   }
 
   logger.info(`Client disconnected${wasObserve ? ' (observe)' : ''}: ${nickname} (${clientId})`);
