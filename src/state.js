@@ -22,8 +22,7 @@ import logger from './logger.js';
  * @property {string|null} badge
  * @property {Set<string>} permissions
  * @property {Set<string>} chatSubscriptions
- * @property {string|null} fingerprint
- * @property {'active'|'background'} mode
+ * @property {boolean} observe
  */
 
 /**
@@ -57,8 +56,6 @@ class ServerState {
     this.clients = new Map();
     /** @type {Map<string, Channel>} */
     this.channels = new Map();
-    /** @type {Map<string, Set<string>>} clientId → Set of fingerprints */
-    this.presenceSubscriptions = new Map();
   }
 
   /**
@@ -176,32 +173,35 @@ class ServerState {
   }
 
   /**
+   * Returns the number of non-observe clients.
+   * @returns {number}
+   */
+  getFullClientCount() {
+    let count = 0;
+    for (const client of this.clients.values()) {
+      if (!client.observe) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
    * Checks if a nickname is already in use (case-insensitive).
    * @param {string} nickname
+   * @param {boolean} [excludeObserve] - If true, skip observe-mode clients.
    * @returns {boolean}
    */
-  isNicknameTaken(nickname) {
+  isNicknameTaken(nickname, excludeObserve) {
     for (const client of this.clients.values()) {
+      if (excludeObserve && client.observe) {
+        continue;
+      }
       if (client.nickname.toLowerCase() === nickname.toLowerCase()) {
         return true;
       }
     }
     return false;
-  }
-
-  /**
-   * Returns all connected clients with the given userId.
-   * @param {string} userId
-   * @returns {Client[]}
-   */
-  getClientsByUserId(userId) {
-    const result = [];
-    for (const client of this.clients.values()) {
-      if (client.userId === userId) {
-        result.push(client);
-      }
-    }
-    return result;
   }
 
   /**
@@ -248,7 +248,7 @@ class ServerState {
    * @returns {object[]}
    */
   getClientList() {
-    return [...this.clients.values()].map((c) => ({
+    return [...this.clients.values()].filter((c) => !c.observe).map((c) => ({
       id: c.id,
       userId: c.userId || null,
       nickname: c.nickname,

@@ -1,230 +1,165 @@
-import { randomUUID } from 'node:crypto';
-
-const MAX_MESSAGE_LENGTH = 4000;
 import state from '../state.js';
-import {
-  insertDmMessage,
-  getDmMessages,
-  getDmMessage,
-  deleteDmMessage,
-  updateDmMessagePreviews,
-  getDmConversations,
-  getIdentity,
-} from '../db/database.js';
-import { send } from './handler.js';
-import { fetchLinkPreviews } from '../link-preview.js';
+import { insertDmMessage, markDmDelivered, getPendingDmMessages, getDmHistory } from '../db/database.js';
 
 /**
- * Computes a deterministic conversation ID from two user IDs.
- * @param {string} userIdA
- * @param {string} userIdB
- * @returns {string}
- */
-function getConversationId(userIdA, userIdB) {
-  return [userIdA, userIdB].sort().join(':');
-}
-
-/**
- * Sends a payload to all connected sessions of a given userId.
- * @param {string} userId
+ * Sends a JSON message to a WebSocket client if the connection is open.
+ * @param {import('ws').WebSocket} ws
  * @param {string} type
  * @param {object} data
+ * @param {string} [id]
  */
-function sendToUser(userId, type, data) {
-  for (const client of state.getClientsByUserId(userId)) {
-    send(client.ws, type, data);
+function send(ws, type, data, id) {
+  if (ws.readyState === 1) {
+    ws.send(JSON.stringify({ type, data, ...(id !== undefined && { id }) }));
   }
 }
 
+const MAX_DM_LENGTH = 8000;
+
 /**
- * Handles sending a direct message.
+ * Finds a connected client by their identity fingerprint.
+ * @param {string} fingerprint
+ * @returns {object|null}
+ */
+function findClientByFingerprint(fingerprint) {
+  for (const client of state.clients.values()) {
+    if (client.fingerprint === fingerprint) {
+      return client;
+    }
+  }
+  return null;
+}
+
+/**
+ * Handles a client sending a direct message.
+ * Stores the message and relays it to the recipient if they are currently connected.
  * @param {object} client
  * @param {object} data
- * @param {string} [msgId]
+ * @param {string} msgId
  */
 export function handleDmSend(client, data, msgId) {
-  const { recipientUserId, content, replyTo } = data;
-
-  if (!client.userId) {
-    return send(client.ws, 'server:error', { code: 'IDENTITY_REQUIRED', message: 'An identity is required to send direct messages.' }, msgId);
+  if (!client.fingerprint) {
+    return send(client.ws, 'server:error', { code: 'NO_IDENTITY', message: 'You must have an identity to send direct messages.' }, msgId);
   }
 
-  if (!recipientUserId || typeof recipientUserId !== 'string') {
-    return send(client.ws, 'server:error', { code: 'INVALID_RECIPIENT', message: 'Recipient userId is required.' }, msgId);
+  const { id, recipientFingerprint, content } = data;
+
+  if (!id || typeof id !== 'string') {
+    return send(client.ws, 'server:error', { code: 'INVALID_ID', message: 'Message ID is required.' }, msgId);
   }
 
-  if (recipientUserId === client.userId) {
-    return send(client.ws, 'server:error', { code: 'SELF_DM', message: 'Cannot send a direct message to yourself.' }, msgId);
+  if (!recipientFingerprint || typeof recipientFingerprint !== 'string') {
+    return send(client.ws, 'server:error', { code: 'INVALID_RECIPIENT', message: 'Recipient fingerprint is required.' }, msgId);
+  }
+
+  if (recipientFingerprint === client.fingerprint) {
+    return send(client.ws, 'server:error', { code: 'SELF_MESSAGE', message: 'You cannot send a direct message to yourself.' }, msgId);
   }
 
   if (!content || typeof content !== 'string' || content.trim().length === 0) {
     return send(client.ws, 'server:error', { code: 'EMPTY_MESSAGE', message: 'Message cannot be empty.' }, msgId);
   }
 
-  if (content.length > MAX_MESSAGE_LENGTH) {
-    return send(client.ws, 'server:error', { code: 'MESSAGE_TOO_LONG', message: `Message exceeds ${MAX_MESSAGE_LENGTH} characters.` }, msgId);
+  if (content.length > MAX_DM_LENGTH) {
+    return send(client.ws, 'server:error', { code: 'MESSAGE_TOO_LONG', message: `Message exceeds ${MAX_DM_LENGTH} characters.` }, msgId);
   }
 
-  const conversationId = getConversationId(client.userId, recipientUserId);
+  const now = Date.now();
 
-  let replyToContent = null;
-  let replyToUserId = null;
-  if (replyTo) {
-    const repliedMsg = getDmMessage(replyTo);
-    if (repliedMsg) {
-      replyToUserId = repliedMsg.sender_user_id || null;
-      replyToContent = repliedMsg.content || null;
+  insertDmMessage({
+    id,
+    senderFingerprint: client.fingerprint,
+    recipientFingerprint,
+    content: content.trim(),
+    createdAt: now,
+  });
+
+  send(client.ws, 'dm:sent', { id }, msgId);
+
+  const recipient = findClientByFingerprint(recipientFingerprint);
+  if (recipient) {
+    send(recipient.ws, 'dm:receive', {
+      id,
+      senderFingerprint: client.fingerprint,
+      senderNickname: client.nickname,
+      content: content.trim(),
+      createdAt: now,
+    });
+  }
+}
+
+/**
+ * Handles a client acknowledging receipt of a direct message.
+ * Marks the message as delivered and notifies the sender if connected.
+ * @param {object} client
+ * @param {object} data
+ * @param {string} msgId
+ */
+export function handleDmAck(client, data, msgId) {
+  if (!client.fingerprint) {
+    return;
+  }
+
+  const { id } = data;
+
+  if (!id || typeof id !== 'string') {
+    return send(client.ws, 'server:error', { code: 'INVALID_ID', message: 'Message ID is required.' }, msgId);
+  }
+
+  const deliveredAt = Date.now();
+  markDmDelivered(id, deliveredAt);
+
+  // Notify sender if still connected
+  // We don't know the sender fingerprint from just the ID here, so we look it up via a history query trick:
+  // Instead, we rely on the client sending back the senderFingerprint in the ack.
+  const { senderFingerprint } = data;
+  if (senderFingerprint) {
+    const sender = findClientByFingerprint(senderFingerprint);
+    if (sender) {
+      send(sender.ws, 'dm:delivered', { id, deliveredAt });
     }
   }
-
-  const message = {
-    id: randomUUID(),
-    conversationId,
-    senderUserId: client.userId,
-    recipientUserId,
-    content: content.trim(),
-    replyTo: replyTo || null,
-    replyToContent,
-    replyToUserId,
-    createdAt: Date.now(),
-  };
-
-  insertDmMessage(message);
-
-  const senderIdentity = getIdentity(client.userId);
-  const payload = {
-    id: message.id,
-    conversationId,
-    senderUserId: client.userId,
-    recipientUserId,
-    senderNickname: client.nickname,
-    senderBadge: client.badge || null,
-    senderRoleColor: client.roleColor || null,
-    content: message.content,
-    replyTo: message.replyTo,
-    replyToContent: message.replyToContent,
-    replyToUserId: message.replyToUserId,
-    timestamp: message.createdAt,
-  };
-
-  sendToUser(client.userId, 'dm:receive', payload);
-  sendToUser(recipientUserId, 'dm:receive', payload);
-
-  send(client.ws, 'dm:send', { id: message.id }, msgId);
-
-  fetchLinkPreviews(message.content)
-    .then((previews) => {
-      if (previews.length === 0) {
-        return;
-      }
-      updateDmMessagePreviews(message.id, JSON.stringify(previews));
-      const previewPayload = { messageId: message.id, conversationId, previews };
-      sendToUser(client.userId, 'dm:link-preview', previewPayload);
-      sendToUser(recipientUserId, 'dm:link-preview', previewPayload);
-    })
-    .catch(() => {});
 }
 
 /**
- * Handles fetching DM history for a conversation.
+ * Returns DM history between the requesting client and a peer fingerprint.
  * @param {object} client
  * @param {object} data
- * @param {string} [msgId]
+ * @param {string} msgId
  */
 export function handleDmHistory(client, data, msgId) {
-  const { recipientUserId, before, limit = 50 } = data;
-
-  if (!client.userId) {
-    return send(client.ws, 'server:error', { code: 'IDENTITY_REQUIRED', message: 'An identity is required for direct messages.' }, msgId);
+  if (!client.fingerprint) {
+    return send(client.ws, 'server:error', { code: 'NO_IDENTITY', message: 'You must have an identity to access direct messages.' }, msgId);
   }
 
-  if (!recipientUserId || typeof recipientUserId !== 'string') {
-    return send(client.ws, 'server:error', { code: 'INVALID_RECIPIENT', message: 'Recipient userId is required.' }, msgId);
+  const { peerFingerprint, before, limit } = data;
+
+  if (!peerFingerprint || typeof peerFingerprint !== 'string') {
+    return send(client.ws, 'server:error', { code: 'INVALID_PEER', message: 'Peer fingerprint is required.' }, msgId);
   }
 
-  const conversationId = getConversationId(client.userId, recipientUserId);
-  const clampedLimit = Math.min(Math.max(1, limit), 100);
-  const rows = getDmMessages(conversationId, { before, limit: clampedLimit });
+  const messages = getDmHistory(client.fingerprint, peerFingerprint, { before, limit });
 
-  const messages = rows.map((r) => ({
-    id: r.id,
-    conversationId: r.conversation_id,
-    senderUserId: r.sender_user_id,
-    recipientUserId: r.recipient_user_id,
-    content: r.content,
-    replyTo: r.reply_to || null,
-    replyToContent: r.reply_to_content || null,
-    replyToUserId: r.reply_to_user_id || null,
-    linkPreviews: r.link_previews ? JSON.parse(r.link_previews) : undefined,
-    timestamp: r.created_at,
-    editedAt: r.edited_at || null,
-  }));
-
-  send(client.ws, 'dm:history', { conversationId, recipientUserId, messages }, msgId);
+  send(client.ws, 'dm:history', { peerFingerprint, messages }, msgId);
 }
 
 /**
- * Handles deleting a DM message.
+ * Pushes all pending (undelivered) DM messages to a newly connected client.
+ * Called from the connection handler after a client successfully connects.
  * @param {object} client
- * @param {object} data
- * @param {string} [msgId]
  */
-export function handleDmDelete(client, data, msgId) {
-  const { messageId } = data;
-
-  if (!client.userId) {
-    return send(client.ws, 'server:error', { code: 'IDENTITY_REQUIRED', message: 'An identity is required for direct messages.' }, msgId);
+export function deliverPendingDms(client) {
+  if (!client.fingerprint) {
+    return;
   }
 
-  if (!messageId) {
-    return send(client.ws, 'server:error', { code: 'INVALID_MESSAGE', message: 'Message ID is required.' }, msgId);
+  const pending = getPendingDmMessages(client.fingerprint);
+  for (const msg of pending) {
+    send(client.ws, 'dm:receive', {
+      id: msg.id,
+      senderFingerprint: msg.sender_fingerprint,
+      content: msg.content,
+      createdAt: msg.created_at,
+    });
   }
-
-  const message = getDmMessage(messageId);
-  if (!message) {
-    return send(client.ws, 'server:error', { code: 'NOT_FOUND', message: 'Message not found.' }, msgId);
-  }
-
-  if (message.sender_user_id !== client.userId) {
-    return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'You can only delete your own messages.' }, msgId);
-  }
-
-  deleteDmMessage(messageId);
-
-  const conversationId = message.conversation_id;
-  const otherUserId = message.sender_user_id === client.userId ? message.recipient_user_id : message.sender_user_id;
-  const deletePayload = { messageId, conversationId };
-
-  sendToUser(client.userId, 'dm:deleted', deletePayload);
-  sendToUser(otherUserId, 'dm:deleted', deletePayload);
-
-  send(client.ws, 'dm:delete', { success: true }, msgId);
-}
-
-/**
- * Handles fetching a list of DM conversations for the current user.
- * @param {object} client
- * @param {object} data
- * @param {string} [msgId]
- */
-export function handleDmConversations(client, data, msgId) {
-  if (!client.userId) {
-    return send(client.ws, 'server:error', { code: 'IDENTITY_REQUIRED', message: 'An identity is required for direct messages.' }, msgId);
-  }
-
-  const rows = getDmConversations(client.userId);
-
-  const conversations = rows.map((r) => ({
-    conversationId: r.conversation_id,
-    partnerUserId: r.sender_user_id === client.userId ? r.recipient_user_id : r.sender_user_id,
-    partnerFingerprint: r.partner_fingerprint || null,
-    lastMessage: {
-      id: r.id,
-      content: r.content,
-      senderUserId: r.sender_user_id,
-      timestamp: r.created_at,
-    },
-  }));
-
-  send(client.ws, 'dm:conversations', { conversations }, msgId);
 }

@@ -277,6 +277,22 @@ export function handleChatSend(client, data, msgId) {
     }
   }
 
+  const trimmedContent = message.content;
+  for (const peer of state.clients.values()) {
+    if (!peer.observe || !peer.userId) {
+      continue;
+    }
+    if (trimmedContent.includes(`@u(${peer.userId})`)) {
+      send(peer.ws, 'notify:mention', {
+        channelId,
+        channelName: channel.name,
+        nickname: client.nickname,
+        content: trimmedContent.slice(0, 200),
+        timestamp: message.createdAt,
+      });
+    }
+  }
+
   fetchLinkPreviews(message.content)
     .then((previews) => {
       if (previews.length === 0) {

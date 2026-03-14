@@ -1566,105 +1566,64 @@ export function getAnalyticsData() {
   };
 }
 
-// --- Direct Messages ---
-
 /**
- * Inserts a direct message into the database.
- * @param {object} msg
+ * Inserts a new DM message into the database.
+ * @param {{ id: string, senderFingerprint: string, recipientFingerprint: string, content: string, createdAt: number }} msg
  */
 export function insertDmMessage(msg) {
   db.prepare(
-    `INSERT INTO dm_messages (id, conversation_id, sender_user_id, recipient_user_id, content, reply_to, reply_to_content, reply_to_user_id, link_previews, created_at)
-     VALUES (@id, @conversationId, @senderUserId, @recipientUserId, @content, @replyTo, @replyToContent, @replyToUserId, @linkPreviews, @createdAt)`,
-  ).run({
-    id: msg.id,
-    conversationId: msg.conversationId,
-    senderUserId: msg.senderUserId,
-    recipientUserId: msg.recipientUserId,
-    content: msg.content,
-    replyTo: msg.replyTo ?? null,
-    replyToContent: msg.replyToContent ?? null,
-    replyToUserId: msg.replyToUserId ?? null,
-    linkPreviews: msg.linkPreviews ?? null,
-    createdAt: msg.createdAt,
-  });
+    `INSERT OR IGNORE INTO dm_messages (id, sender_fingerprint, recipient_fingerprint, content, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run(msg.id, msg.senderFingerprint, msg.recipientFingerprint, msg.content, msg.createdAt);
 }
 
 /**
- * Returns paginated DM messages for a conversation.
- * @param {string} conversationId
- * @param {object} [options]
- * @param {number} [options.before]
- * @param {number} [options.limit]
- * @returns {object[]}
+ * Marks a DM message as delivered.
+ * @param {string} id - Message UUID
+ * @param {number} deliveredAt - Timestamp
  */
-export function getDmMessages(conversationId, { before, limit = 50 } = {}) {
+export function markDmDelivered(id, deliveredAt) {
+  db.prepare('UPDATE dm_messages SET delivered_at = ? WHERE id = ? AND delivered_at IS NULL').run(deliveredAt, id);
+}
+
+/**
+ * Returns all undelivered DM messages for a given recipient fingerprint.
+ * @param {string} recipientFingerprint
+ * @returns {Array<object>}
+ */
+export function getPendingDmMessages(recipientFingerprint) {
+  return db
+    .prepare('SELECT * FROM dm_messages WHERE recipient_fingerprint = ? AND delivered_at IS NULL ORDER BY created_at ASC')
+    .all(recipientFingerprint);
+}
+
+/**
+ * Returns DM conversation history between two fingerprints.
+ * @param {string} fingerprintA
+ * @param {string} fingerprintB
+ * @param {{ before?: number, limit?: number }} options
+ * @returns {Array<object>}
+ */
+export function getDmHistory(fingerprintA, fingerprintB, { before, limit = 50 } = {}) {
   if (before) {
     return db
       .prepare(
-        `SELECT * FROM dm_messages WHERE conversation_id = ? AND created_at < ?
-       ORDER BY created_at DESC LIMIT ?`,
+        `SELECT * FROM dm_messages
+         WHERE ((sender_fingerprint = ? AND recipient_fingerprint = ?)
+             OR (sender_fingerprint = ? AND recipient_fingerprint = ?))
+           AND created_at < ?
+         ORDER BY created_at DESC LIMIT ?`,
       )
-      .all(conversationId, before, limit);
+      .all(fingerprintA, fingerprintB, fingerprintB, fingerprintA, before, limit);
   }
   return db
     .prepare(
-      `SELECT * FROM dm_messages WHERE conversation_id = ?
-     ORDER BY created_at DESC LIMIT ?`,
+      `SELECT * FROM dm_messages
+       WHERE (sender_fingerprint = ? AND recipient_fingerprint = ?)
+          OR (sender_fingerprint = ? AND recipient_fingerprint = ?)
+       ORDER BY created_at DESC LIMIT ?`,
     )
-    .all(conversationId, limit);
-}
-
-/**
- * Returns a single DM message by ID.
- * @param {string} id
- * @returns {object|undefined}
- */
-export function getDmMessage(id) {
-  return db.prepare('SELECT * FROM dm_messages WHERE id = ?').get(id);
-}
-
-/**
- * Deletes a DM message by ID.
- * @param {string} id
- */
-export function deleteDmMessage(id) {
-  db.prepare('DELETE FROM dm_messages WHERE id = ?').run(id);
-}
-
-/**
- * Updates the link previews for a DM message.
- * @param {string} messageId
- * @param {string} previews
- */
-export function updateDmMessagePreviews(messageId, previews) {
-  db.prepare('UPDATE dm_messages SET link_previews = ? WHERE id = ?').run(previews, messageId);
-}
-
-/**
- * Returns a list of DM conversations for a user, with the latest message per conversation.
- * @param {string} userId
- * @returns {object[]}
- */
-export function getDmConversations(userId) {
-  return db
-    .prepare(
-      `WITH ranked AS (
-        SELECT *,
-          ROW_NUMBER() OVER (PARTITION BY conversation_id ORDER BY created_at DESC) AS rn
-        FROM dm_messages
-        WHERE sender_user_id = ? OR recipient_user_id = ?
-      )
-      SELECT r.*, i.fingerprint AS partner_fingerprint
-      FROM ranked r
-      LEFT JOIN identities i ON i.user_id = CASE
-        WHEN r.sender_user_id = ? THEN r.recipient_user_id
-        ELSE r.sender_user_id
-      END
-      WHERE r.rn = 1
-      ORDER BY r.created_at DESC`,
-    )
-    .all(userId, userId, userId);
+    .all(fingerprintA, fingerprintB, fingerprintB, fingerprintA, limit);
 }
 
 export default db;
