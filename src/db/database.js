@@ -1707,4 +1707,14 @@ export function deleteFriendRequest(id) {
   db.prepare('DELETE FROM friend_requests WHERE id = ?').run(id);
 }
 
+/**
+ * Deletes all direct messages and friend requests from the database.
+ * @returns {{ dmCount: number, friendRequestCount: number }}
+ */
+export function purgeAllDmAndFriendData() {
+  const dmResult = db.prepare('DELETE FROM dm_messages').run();
+  const frResult = db.prepare('DELETE FROM friend_requests').run();
+  return { dmCount: dmResult.changes, friendRequestCount: frResult.changes };
+}
+
 export default db;
