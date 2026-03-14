@@ -78,6 +78,7 @@ export function handleFriendRequest(client, data, msgId) {
 
   const recipient = findClientByFingerprint(recipientFingerprint);
   if (recipient) {
+    logger.info(`[friends] Recipient ${recipientFingerprint} is online (clientId=${recipient.id}, nickname=${recipient.nickname}), sending friend:request-received`);
     send(recipient.ws, 'friend:request-received', {
       requestId: id,
       senderFingerprint: client.fingerprint,
@@ -85,9 +86,11 @@ export function handleFriendRequest(client, data, msgId) {
       senderPublicKey: senderIdentity.public_key,
       createdAt,
     });
+  } else {
+    logger.info(`[friends] Recipient ${recipientFingerprint} is offline, request stored for later delivery`);
   }
 
-  logger.info(`Friend request from ${client.nickname} (${client.fingerprint}) to ${recipientFingerprint}`);
+  logger.info(`[friends] Friend request from ${client.nickname} (${client.fingerprint}) to ${recipientFingerprint}`);
 }
 
 /**
@@ -264,7 +267,9 @@ export function deliverPendingFriendRequests(client) {
   }
 
   const pending = getPendingFriendRequests(client.fingerprint);
+  logger.info(`[friends] Delivering ${pending.length} pending friend request(s) to ${client.nickname} (${client.fingerprint})`);
   for (const req of pending) {
+    logger.info(`[friends]   - pending request ${req.id} from ${req.sender_nickname} (${req.sender_fingerprint})`);
     send(client.ws, 'friend:request-received', {
       requestId: req.id,
       senderFingerprint: req.sender_fingerprint,
@@ -275,8 +280,10 @@ export function deliverPendingFriendRequests(client) {
   }
 
   const accepted = getUnnotifiedAcceptedRequests(client.fingerprint);
+  logger.info(`[friends] Delivering ${accepted.length} accepted friend request(s) to ${client.nickname} (${client.fingerprint})`);
   for (const req of accepted) {
     const acceptorIdentity = findIdentityByFingerprint(req.recipient_fingerprint);
+    logger.info(`[friends]   - accepted request ${req.id} by ${acceptorIdentity?.name || 'unknown'} (${req.recipient_fingerprint})`);
     send(client.ws, 'friend:accepted', {
       requestId: req.id,
       friendFingerprint: req.recipient_fingerprint,
