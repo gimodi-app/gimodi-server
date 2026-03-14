@@ -360,6 +360,7 @@ export function handleUpgrade(client, data, msgId) {
       badge,
       roleColor,
       rolePosition,
+      fingerprint: client.fingerprint || null,
     },
     client.id,
   );
