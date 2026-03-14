@@ -32,6 +32,7 @@ import { deliverPendingDms } from './dm.js';
 import { deliverPendingFriendRequests } from './friends.js';
 import { cleanupClientMedia, maybeCloseRouter } from '../media/room.js';
 import { checkTemporaryChannel, hasChannelVisibility } from './channels.js';
+import { notifyPresenceChange, cleanupPresence } from './presence.js';
 
 /**
  * Broadcasts a server event message to all connected clients.
@@ -282,6 +283,10 @@ export async function handleConnect(ws, data, msgId, ip) {
 
   broadcastServerEvent(`→ ${trimmed} joined the server`);
 
+  if (fingerprint) {
+    notifyPresenceChange(fingerprint, true);
+  }
+
   logger.info(`Client connected: ${trimmed} (${clientId}${userId ? `, userId=${userId}` : ''})`);
 }
 
@@ -417,7 +422,12 @@ export function handleDisconnect(ws) {
   }
 
   cleanupClientMedia(client);
+  cleanupPresence(clientId);
   state.removeClient(clientId);
+
+  if (client.fingerprint && !wasObserve) {
+    notifyPresenceChange(client.fingerprint, false);
+  }
 
   if (!wasObserve) {
     const channel = state.channels.get(channelId);

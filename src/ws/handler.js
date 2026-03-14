@@ -79,6 +79,7 @@ import { handleGetUserInfo, handleGetPublicKey, handleGetNicknames } from './use
 import { handleGetSettings, handleSetSettings } from './settings.js';
 import { handleDmSend, handleDmAck, handleDmHistory } from './dm.js';
 import { handleFriendRequest, handleFriendAccept, handleFriendReject, handleFriendList, handleFriendRemove } from './friends.js';
+import { handlePresenceSubscribe, handlePresenceUnsubscribe } from './presence.js';
 import { incrementCounter } from '../metrics.js';
 
 let wss;
@@ -380,6 +381,11 @@ async function routeMessage(client, type, data, id) {
         return handleFriendList(client, data, id);
       case 'friend:remove':
         return handleFriendRemove(client, data, id);
+
+      case 'presence:subscribe':
+        return handlePresenceSubscribe(client, data, id);
+      case 'presence:unsubscribe':
+        return handlePresenceUnsubscribe(client, data, id);
 
       case 'server:ping':
         return;
