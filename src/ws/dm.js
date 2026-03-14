@@ -42,7 +42,7 @@ export function handleDmSend(client, data, msgId) {
     return send(client.ws, 'server:error', { code: 'NO_IDENTITY', message: 'You must have an identity to send direct messages.' }, msgId);
   }
 
-  const { id, recipientFingerprint, content } = data;
+  const { id, recipientFingerprint, content, replyTo, replyToNickname, replyToContent } = data;
 
   if (!id || typeof id !== 'string') {
     return send(client.ws, 'server:error', { code: 'INVALID_ID', message: 'Message ID is required.' }, msgId);
@@ -66,12 +66,20 @@ export function handleDmSend(client, data, msgId) {
 
   const now = Date.now();
 
+  const trimmedContent = content.trim();
+  const safeReplyTo = replyTo && typeof replyTo === 'string' ? replyTo : null;
+  const safeReplyToNickname = replyToNickname && typeof replyToNickname === 'string' ? replyToNickname : null;
+  const safeReplyToContent = replyToContent && typeof replyToContent === 'string' ? replyToContent : null;
+
   insertDmMessage({
     id,
     senderFingerprint: client.fingerprint,
     recipientFingerprint,
-    content: content.trim(),
+    content: trimmedContent,
     createdAt: now,
+    replyTo: safeReplyTo,
+    replyToNickname: safeReplyToNickname,
+    replyToContent: safeReplyToContent,
   });
 
   send(client.ws, 'dm:sent', { id }, msgId);
@@ -82,8 +90,9 @@ export function handleDmSend(client, data, msgId) {
       id,
       senderFingerprint: client.fingerprint,
       senderNickname: client.nickname,
-      content: content.trim(),
+      content: trimmedContent,
       createdAt: now,
+      ...(safeReplyTo && { replyTo: safeReplyTo, replyToNickname: safeReplyToNickname, replyToContent: safeReplyToContent }),
     });
   }
 }
@@ -160,6 +169,7 @@ export function deliverPendingDms(client) {
       senderFingerprint: msg.sender_fingerprint,
       content: msg.content,
       createdAt: msg.created_at,
+      ...(msg.reply_to && { replyTo: msg.reply_to, replyToNickname: msg.reply_to_nickname, replyToContent: msg.reply_to_content }),
     });
   }
 }

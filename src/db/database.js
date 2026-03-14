@@ -1568,13 +1568,13 @@ export function getAnalyticsData() {
 
 /**
  * Inserts a new DM message into the database.
- * @param {{ id: string, senderFingerprint: string, recipientFingerprint: string, content: string, createdAt: number }} msg
+ * @param {{ id: string, senderFingerprint: string, recipientFingerprint: string, content: string, createdAt: number, replyTo?: string|null, replyToNickname?: string|null, replyToContent?: string|null }} msg
  */
 export function insertDmMessage(msg) {
   db.prepare(
-    `INSERT OR IGNORE INTO dm_messages (id, sender_fingerprint, recipient_fingerprint, content, created_at)
-     VALUES (?, ?, ?, ?, ?)`,
-  ).run(msg.id, msg.senderFingerprint, msg.recipientFingerprint, msg.content, msg.createdAt);
+    `INSERT OR IGNORE INTO dm_messages (id, sender_fingerprint, recipient_fingerprint, content, created_at, reply_to, reply_to_nickname, reply_to_content)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(msg.id, msg.senderFingerprint, msg.recipientFingerprint, msg.content, msg.createdAt, msg.replyTo ?? null, msg.replyToNickname ?? null, msg.replyToContent ?? null);
 }
 
 /**
