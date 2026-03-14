@@ -252,7 +252,11 @@ export async function handleConnect(ws, data, msgId, ip) {
     msgId,
   );
 
-  deliverPendingDms(client);
+  try {
+    deliverPendingDms(client);
+  } catch (err) {
+    logger.warn(`[dm] Failed to deliver pending DMs to ${trimmed}: ${err.message}`);
+  }
 
   broadcast(
     'server:client-joined',
@@ -264,6 +268,7 @@ export async function handleConnect(ws, data, msgId, ip) {
       badge,
       roleColor,
       rolePosition,
+      fingerprint: fingerprint || null,
     },
     clientId,
   );

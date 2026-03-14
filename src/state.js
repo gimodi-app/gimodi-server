@@ -258,6 +258,7 @@ class ServerState {
       rolePosition: c.rolePosition ?? Infinity,
       muted: !!c.muted,
       deafened: !!c.deafened,
+      fingerprint: c.fingerprint || null,
     }));
   }
 }

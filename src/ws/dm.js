@@ -1,7 +1,18 @@
-import { randomUUID } from 'node:crypto';
 import state from '../state.js';
 import { insertDmMessage, markDmDelivered, getPendingDmMessages, getDmHistory } from '../db/database.js';
-import { send } from './handler.js';
+
+/**
+ * Sends a JSON message to a WebSocket client if the connection is open.
+ * @param {import('ws').WebSocket} ws
+ * @param {string} type
+ * @param {object} data
+ * @param {string} [id]
+ */
+function send(ws, type, data, id) {
+  if (ws.readyState === 1) {
+    ws.send(JSON.stringify({ type, data, ...(id !== undefined && { id }) }));
+  }
+}
 
 const MAX_DM_LENGTH = 8000;
 
