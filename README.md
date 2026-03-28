@@ -53,6 +53,7 @@ Settings are stored in the SQLite database (`data/gimodi.db` in the `server_conf
 | `GIMODI_ICON_FILENAME`                  | string  | `null`            | Server icon filename (managed automatically)                             |
 | `GIMODI_METRICS_ENABLED`                | boolean | `false`           | Enable Prometheus metrics endpoint at `/metrics`                         |
 | `GIMODI_METRICS_ALLOWED_NETWORK`        | string  | `0.0.0.0/0`       | CIDR range allowed to access `/metrics` (e.g. `10.24.0.0/16`)            |
+| `GIMODI_WEB_PATH`                       | string  | `null`            | Path to web client dist directory; serves at `/app` when set             |
 | `GIMODI_PURGE_DM_DATA`                  | boolean | `false`           | Delete all DMs and friend requests on startup                            |
 
 Boolean values accept `true`/`1` for true, anything else for false. Set to `null` or empty string to clear a value.
