@@ -43,6 +43,7 @@ export const PERMISSIONS = {
   FILE_BROWSE: 'file.browse',
   FILE_DELETE: 'file.delete',
   SERVER_BYPASS_PASSWORD: 'server.bypass_password',
+  MEET_CREATE_INVITE: 'meet.create_invite',
 };
 
 /**
@@ -110,6 +111,11 @@ export const PERMISSION_GROUPS = [
     label: 'Roles & Administration',
     permissions: ['role.manage', 'server.admin_menu', 'server.manage_settings', 'server.bypass_password'],
   },
+  {
+    id: 'meet',
+    label: 'Meet',
+    permissions: ['meet.create_invite'],
+  },
 ];
 
 /**
@@ -158,4 +164,5 @@ export const PERMISSION_LABELS = {
   'file.browse': 'Browse Channel Files',
   'file.delete': 'Delete Any File',
   'server.bypass_password': 'Bypass Server Password',
+  'meet.create_invite': 'Create Meet Invite Links',
 };

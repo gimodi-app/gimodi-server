@@ -89,6 +89,7 @@ import {
 } from './conversation.js';
 import { handleFriendRequest, handleFriendAccept, handleFriendReject, handleFriendList, handleFriendRemove } from './friends.js';
 import { handlePresenceSubscribe, handlePresenceUnsubscribe } from './presence.js';
+import { handleMeetJoin, handleMeetCreateInvite, handleMeetDeleteInvite, handleMeetListInvites } from './meet.js';
 import { incrementCounter } from '../metrics.js';
 
 let wss;
@@ -151,6 +152,10 @@ export function initWebSocket(server) {
 
       if (type === 'server:connect') {
         return handleConnect(ws, data || {}, id, ip);
+      }
+
+      if (type === 'meet:join') {
+        return handleMeetJoin(ws, data || {}, id, ip);
       }
 
       const clientId = ws._clientId;
@@ -412,6 +417,13 @@ async function routeMessage(client, type, data, id) {
         return handlePresenceSubscribe(client, data, id);
       case 'presence:unsubscribe':
         return handlePresenceUnsubscribe(client, data, id);
+
+      case 'meet:create-invite':
+        return handleMeetCreateInvite(client, data, id);
+      case 'meet:delete-invite':
+        return handleMeetDeleteInvite(client, data, id);
+      case 'meet:list-invites':
+        return handleMeetListInvites(client, data, id);
 
       case 'server:ping':
         return;

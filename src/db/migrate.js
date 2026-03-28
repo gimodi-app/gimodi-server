@@ -9,6 +9,7 @@ import migration007 from './migrations/007-dm-messages.js';
 import migration008 from './migrations/008-friend-requests.js';
 import migration009 from './migrations/009-dm-replies-reactions.js';
 import migration010 from './migrations/010-conversations.js';
+import migration011 from './migrations/011-meet-invites.js';
 import logger from '../logger.js';
 
 /** @type {Array<[string, function]>} */
@@ -23,6 +24,7 @@ const MIGRATIONS = [
   ['008-friend-requests', migration008],
   ['009-dm-replies-reactions', migration009],
   ['010-conversations', migration010],
+  ['011-meet-invites', migration011],
 ];
 
 /**

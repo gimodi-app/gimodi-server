@@ -54,6 +54,8 @@ Settings are stored in the SQLite database (`data/gimodi.db` in the `server_conf
 | `GIMODI_METRICS_ENABLED`                | boolean | `false`           | Enable Prometheus metrics endpoint at `/metrics`                         |
 | `GIMODI_METRICS_ALLOWED_NETWORK`        | string  | `0.0.0.0/0`       | CIDR range allowed to access `/metrics` (e.g. `10.24.0.0/16`)            |
 | `GIMODI_WEB_PATH`                       | string  | `null`            | Path to web client dist directory; serves at `/app` when set             |
+| `GIMODI_MEET_PATH`                      | string  | `null`            | Path to Gimodi Meet dist directory; serves at `/meet` when set           |
+| `GIMODI_MEET_URL`                       | string  | `null`            | External URL of standalone Gimodi Meet (for invite link generation)       |
 | `GIMODI_PURGE_DM_DATA`                  | boolean | `false`           | Delete all DMs and friend requests on startup                            |
 
 Boolean values accept `true`/`1` for true, anything else for false. Set to `null` or empty string to clear a value.

@@ -13,6 +13,7 @@ import { setCors } from './http/utils.js';
 import { handleFileUpload, handleFileDownload } from './http/files.js';
 import { handleIconUpload, handleIconDownload, handleIconDelete } from './http/icon.js';
 import { handleWebClient } from './http/web.js';
+import { handleMeetClient, handleMeetInviteApi } from './http/meet.js';
 import { collectMetrics, isIpInCidr } from './metrics.js';
 
 let httpServer = null;
@@ -124,6 +125,16 @@ async function main() {
 
     if (req.url === '/app' || req.url.startsWith('/app/')) {
       handleWebClient(req, res);
+      return;
+    }
+
+    if (req.url.startsWith('/meet/api/')) {
+      handleMeetInviteApi(req, res);
+      return;
+    }
+
+    if (req.url === '/meet' || req.url.startsWith('/meet/')) {
+      handleMeetClient(req, res);
       return;
     }
 

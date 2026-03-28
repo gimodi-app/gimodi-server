@@ -44,6 +44,7 @@ try {
 
 db.prepare("INSERT OR IGNORE INTO roles (id, name, badge, position) VALUES ('admin', 'Admin', 'Admin', 0)").run();
 db.prepare("INSERT OR IGNORE INTO roles (id, name, badge, position) VALUES ('user', 'User', NULL, 1)").run();
+db.prepare("INSERT OR IGNORE INTO roles (id, name, badge, position) VALUES ('guest', 'Guest', NULL, 2)").run();
 
 for (const perm of ALL_PERMISSIONS) {
   db.prepare("INSERT OR IGNORE INTO role_permissions (role_id, permission) VALUES ('admin', ?)").run(perm);
@@ -1099,7 +1100,7 @@ export function updateRole(id, props) {
  * @param {string} id
  */
 export function deleteRole(id) {
-  db.prepare("DELETE FROM roles WHERE id = ? AND id != 'admin' AND id != 'user'").run(id);
+  db.prepare("DELETE FROM roles WHERE id = ? AND id != 'admin' AND id != 'user' AND id != 'guest'").run(id);
 }
 
 /**
@@ -1859,6 +1860,59 @@ export function purgeAllDmAndFriendData() {
   const convResult = db.prepare('DELETE FROM conversations').run();
   const frResult = db.prepare('DELETE FROM friend_requests').run();
   return { conversationCount: convResult.changes, dmCount: dmResult.changes, friendRequestCount: frResult.changes };
+}
+
+/**
+ * Creates a meet invite for a channel.
+ * @param {object} invite
+ * @param {string} invite.id
+ * @param {string} invite.channelId
+ * @param {string} invite.createdBy
+ * @param {number} invite.createdAt
+ * @param {number|null} invite.expiresAt
+ * @param {number|null} invite.maxUses
+ */
+export function createMeetInvite(invite) {
+  db.prepare(
+    'INSERT INTO meet_invites (id, channel_id, created_by, created_at, expires_at, max_uses) VALUES (?, ?, ?, ?, ?, ?)',
+  ).run(invite.id, invite.channelId, invite.createdBy, invite.createdAt, invite.expiresAt, invite.maxUses);
+}
+
+/**
+ * Returns a meet invite by ID, or undefined if not found.
+ * @param {string} id
+ * @returns {object|undefined}
+ */
+export function getMeetInvite(id) {
+  return db.prepare('SELECT * FROM meet_invites WHERE id = ?').get(id);
+}
+
+/**
+ * Increments the use count of a meet invite.
+ * @param {string} id
+ */
+export function incrementMeetInviteUse(id) {
+  db.prepare('UPDATE meet_invites SET use_count = use_count + 1 WHERE id = ?').run(id);
+}
+
+/**
+ * Deletes a meet invite by ID.
+ * @param {string} id
+ */
+export function deleteMeetInvite(id) {
+  db.prepare('DELETE FROM meet_invites WHERE id = ?').run(id);
+}
+
+/**
+ * Returns all meet invites, optionally filtered by channel.
+ * @param {string} [channelId]
+ * @returns {object[]}
+ */
+export function listMeetInvites(channelId) {
+  if (channelId) {
+    return db.prepare('SELECT * FROM meet_invites WHERE channel_id = ? ORDER BY created_at DESC').all(channelId);
+  }
+  return db.prepare('SELECT * FROM meet_invites ORDER BY created_at DESC').all();
 }
 
 export default db;

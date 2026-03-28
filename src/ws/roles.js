@@ -423,7 +423,7 @@ export function handleRoleDelete(client, data, id) {
     return send(client.ws, 'server:error', { code: 'FORBIDDEN', message: 'Admin access required.' }, id);
   }
   const { roleId } = data;
-  if (!roleId || roleId === 'admin' || roleId === 'user') {
+  if (!roleId || roleId === 'admin' || roleId === 'user' || roleId === 'guest') {
     return send(client.ws, 'server:error', { code: 'INVALID_ROLE', message: 'Cannot delete a built-in role.' }, id);
   }
   if (!actorCanManageRole(client, roleId)) {

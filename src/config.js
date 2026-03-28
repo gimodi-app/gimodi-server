@@ -38,6 +38,8 @@ const defaults = {
     allowedNetwork: '0.0.0.0/0',
   },
   webPath: null,
+  meetPath: null,
+  meetUrl: null,
 };
 
 /** @type {Record<string, {key: string, type: string}>} */
@@ -66,6 +68,8 @@ const ENV_MAP = {
   GIMODI_METRICS_ENABLED: { key: 'metrics.enabled', type: 'boolean' },
   GIMODI_METRICS_ALLOWED_NETWORK: { key: 'metrics.allowedNetwork', type: 'string' },
   GIMODI_WEB_PATH: { key: 'webPath', type: 'string' },
+  GIMODI_MEET_PATH: { key: 'meetPath', type: 'string' },
+  GIMODI_MEET_URL: { key: 'meetUrl', type: 'string' },
 };
 
 /**
