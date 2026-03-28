@@ -32,7 +32,9 @@ export function handleWebClient(req, res) {
   }
 
   let urlPath = req.url.replace(/^\/app\/?/, '/').split('?')[0];
-  if (urlPath === '/') urlPath = '/index.html';
+  if (urlPath === '/') {
+    urlPath = '/index.html';
+  }
 
   const filePath = join(webPath, urlPath);
 
