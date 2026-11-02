@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
-    "mediasoup": "^3.19.17",
-    "openpgp": "^6.3.0",
+    "mediasoup": "^3.32.1",
+    "openpgp": "^6.3.2",
     "selfsigned": "^5.5.0",
     "winston": "^3.19.0",
     "ws": "^8.18.0"
